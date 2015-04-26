@@ -28,7 +28,7 @@ public class TheMusicPlayer {
           return;
         } catch (IOException e) {
           e.printStackTrace();
-          return;
+          return; 
         }
 
         SourceDataLine sourceDataLine = null;
