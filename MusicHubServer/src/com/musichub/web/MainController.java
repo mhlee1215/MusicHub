@@ -1,12 +1,19 @@
 package com.musichub.web;
 
+
+import java.net.Inet4Address;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.ServletRequestUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
+
+import com.musichub.core.CapitalizeClient;
 
 
 
@@ -35,22 +42,28 @@ public class MainController {
 //	    String language = (String)request.getSession().getAttribute("lang");
 		//LanguagePack lang = LanguageServiceImpl.getLangPack(language);
 		
+		String myIP = Inet4Address.getLocalHost().getHostAddress();
 		
 		ModelAndView model = new ModelAndView("configure");
-//		//model.addObject("page_title", lang.getStringHazardReportingSystem());
-//		model.addObject("loginComplete", loginComplete);
-//		model.addObject("loginFail", loginFail);
-//		model.addObject("logoutComplete", logoutComplete);
-//		model.addObject("registerComplete", registerComplete);
-//		model.addObject("registerFail", registerFail);
-//		model.addObject("submittedUserId", submittedUserId);
-//		model.addObject("isUseController", "true");
-//		model.addObject("user_type", user_type);
+		model.addObject("myIP", myIP);
 //		
 //		
 //		
 //		model.addObject("active", "index");
 				
 		return model;
+    }
+	
+	@RequestMapping("/connectToServer.do")
+    public @ResponseBody String connectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
+		System.out.println("connect to Server! :"+hostIP);
+		
+		CapitalizeClient client = new CapitalizeClient();
+				
+		client.connectToServer(hostIP);
+				
+		return "success";
     }
 }

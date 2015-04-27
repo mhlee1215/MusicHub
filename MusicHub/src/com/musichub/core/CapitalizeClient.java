@@ -1,3 +1,4 @@
+package com.musichub.core;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ConnectException;

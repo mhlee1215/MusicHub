@@ -8,6 +8,43 @@
     <link rel="stylesheet" href="https://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css">
     <script src="https://code.jquery.com/jquery-1.8.2.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
+    <script src="js/jquery.input-ip-address-control-1.0.min.js"></script>
+    
+    <script>
+    $(function() {
+    	
+    	$('#id_host_ip').ipAddress();
+        $("#id_btn_connectToServer").click(function() {
+            var hostIP = $.trim($("#id_host_ip").val());
+ 
+            if(hostIP.length > 0)
+            {
+                $.ajax({
+                  type: "POST",
+                  url: "connectToServer.do",
+                  data: ({hostIP: hostIP}),
+                  cache: false,
+                  dataType: "text",
+                  success: onSuccess
+                });
+            }
+        });
+ 
+        /*
+        $("#resultLog").ajaxError(function(event, request, settings, exception) {
+          $("#resultLog").html("Error Calling: " + settings.url + "<br />HTTP Code: " + request.status);
+        });
+        */
+ 
+        function onSuccess(data)
+        {
+        	alert(data);
+            //$("#resultLog").html("Result: " + data);
+        }
+ 
+    });
+	</script>
+    
 </head>
 <body>
     <div data-role="page">
@@ -17,27 +54,31 @@
         </div><!-- /header -->
  
         <div data-role="content">
-            <p>Hello world23</p>
-            <input type="text"></input>
-            <a href="#" data-role="button" data-icon="star">Connect</a>
-            <a href="#" data-role="button" data-icon="star" data-theme="a">Button</a>
+        	<p>Current IP : ${myIP}</p>
+        	<div data-role="fieldcontain">
+	         <label for="name"">Host IP Address (For Listening): </label>
+	         <input type="text" name="name" id="id_host_ip" value=""  />
+	         <a href="#" data-role="button" data-icon="star" id="id_btn_connectToServer">Connect</a>
+			</div>
+        
+        
             
-            <ul data-role="listview" data-inset="true" data-filter="true">
-			    <li><a href="#">Acura</a></li>
-			    <li><a href="#">Audi</a></li>
-			    <li><a href="#">BMW</a></li>
-			    <li><a href="#">Cadillac</a></li>
-			    <li><a href="#">Ferrari</a></li>
-			</ul>
-			
-			<form>
-			    <label for="slider-0">Input slider:</label>
-			    <input type="range" name="slider" id="slider-0" value="25" min="0" max="100" />
-			</form>
+            <p>Broadcasting</p>
+            <input type="file"></input>
+            <a href="#" data-role="button" data-icon="star" data-theme="a">Broadcasting</a>
+            
+            <div data-role="fieldcontain">
+				<label for="slider2">Flip switch:</label>
+				<select name="slider2" id="slider2" data-role="slider">
+					<option value="off">Off</option>
+					<option value="on">On</option>
+				</select>
+			</div>
+      
         </div><!-- /content -->
  
         <div data-role="footer"> 
-            <h4>Copyright</h4>
+            <h4>Music Hub Development Team</h4>
         </div><!-- /footer -->
  
     </div><!-- /page -->1

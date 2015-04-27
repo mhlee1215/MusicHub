@@ -1,3 +1,4 @@
+package com.musichub.core;
 // List of time servers: http://tf.nist.gov/service/time-servers.html
 
 import java.net.InetAddress;
