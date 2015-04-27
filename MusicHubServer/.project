@@ -3,6 +3,7 @@
 	<name>MusicHubServer</name>
 	<comment></comment>
 	<projects>
+		<project>MusicHub</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

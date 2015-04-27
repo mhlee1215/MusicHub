@@ -13,17 +13,19 @@ import javax.sound.sampled.SourceDataLine;
 public class CapitalizeClient {
 
 	DataInputStream in = null;//new DataInputStream(socket.getInputStream());
+	PlayDaemon daemon = null;
+	
 	public CapitalizeClient() {
 
 	}
 
-	public static class PlayDemon extends Thread {
+	public static class PlayDaemon extends Thread {
 
 		Socket socket = null;
 		DataInputStream in = null;
 		SourceDataLine sourceDataLine = null;
 
-		public PlayDemon(Socket socket, DataInputStream in) {
+		public PlayDaemon(Socket socket, DataInputStream in) {
 			this.socket = socket;
 			this.in = in;
 
@@ -84,17 +86,21 @@ public class CapitalizeClient {
 			try {
 				Socket socket = new Socket(serverAddress, 9898);
 				in = new DataInputStream(socket.getInputStream());
-				new PlayDemon(socket, in).start();
+				daemon = new PlayDaemon(socket, in);
+				daemon.start();
 				break;
 			} catch (ConnectException e) {
 				System.err.println("Connection Fail.. try again after "+timeGapBetweenFail+"ms");
 				//e.printStackTrace();
 				Thread.sleep(timeGapBetweenFail);
 			}
-
 		}
-
 	}
+	
+	public void disconnectToServer(){
+		daemon.stop();
+	}
+	
 
 	public static void main(String[] args) throws Exception {
 		System.out.println("I am client");

@@ -20,6 +20,7 @@ import com.musichub.core.CapitalizeClient;
 
 @Controller
 public class MainController {
+	CapitalizeClient client;
 
 	private Logger logger = Logger.getLogger(getClass());
 	
@@ -60,10 +61,28 @@ public class MainController {
 		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
 		System.out.println("connect to Server! :"+hostIP);
 		
-		CapitalizeClient client = new CapitalizeClient();
-				
+		if (client == null){
+			client = new CapitalizeClient();
+		}
+		
 		client.connectToServer(hostIP);
 				
+		return "success";
+    }
+	
+	@RequestMapping("/disconnectToServer.do")
+    public @ResponseBody String disconnectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+//		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
+//		System.out.println("connect to Server! :"+hostIP);
+//		
+//		CapitalizeClient client = new CapitalizeClient();
+//		client.connectToServer(hostIP);
+		
+		if (client != null){
+			client.disconnectToServer();
+		}
+		
 		return "success";
     }
 }
