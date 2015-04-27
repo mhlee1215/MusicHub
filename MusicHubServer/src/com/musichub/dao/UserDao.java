@@ -1,8 +1,8 @@
-package com.respace.dao;
+package com.musichub.dao;
 
 import java.util.List;
 
-import com.respace.domain.RS_User;
+import com.musichub.domain.RS_User;
 
 
 public interface UserDao {

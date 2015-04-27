@@ -1,4 +1,4 @@
-package com.respace.domain;
+package com.musichub.domain;
 
 /**
  * 

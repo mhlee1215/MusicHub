@@ -1,4 +1,4 @@
-package com.respace.dao;
+package com.musichub.dao;
 
 import java.util.List;
 
@@ -6,10 +6,12 @@ import javax.annotation.Resource;
 
 
 
+
 import org.springframework.orm.ibatis.support.SqlMapClientDaoSupport;
 import org.springframework.stereotype.Repository;
+
 import com.ibatis.sqlmap.client.SqlMapClient;
-import com.respace.domain.RS_User;
+import com.musichub.domain.RS_User;
 
 @Repository
 public class UserDaoImpl extends SqlMapClientDaoSupport implements UserDao {

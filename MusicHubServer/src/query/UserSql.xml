@@ -4,7 +4,7 @@
     "http://ibatis.apache.org/dtd/sql-map-2.dtd">
 <sqlMap namespace="UserSql">
 
-	<resultMap id="User" class="com.respace.domain.RS_User">
+	<resultMap id="User" class="com.musichub.domain.RS_User">
 		<result column="ID" property="id" />
 		<result column="NAME" property="name" />
 		<result column="EMAIL" property="email" />
@@ -34,13 +34,13 @@
        </isNotEmpty>
 	</select>
 
-	<insert id="createUser" parameterClass="com.respace.domain.RS_User">
+	<insert id="createUser" parameterClass="com.musichub.domain.RS_User">
 		 INSERT INTO
 		 rs_user (EMAIL, PASSWORD, TYPE)
 		 VALUES (#email#, #password#, #type#)
 	</insert>
 	
-	<update id="updateUser" parameterClass="com.respace.domain.RS_User">
+	<update id="updateUser" parameterClass="com.musichub.domain.RS_User">
 		 UPDATE rs_user SET
 		 ID = #id#
 		 <isNotEmpty property="password">

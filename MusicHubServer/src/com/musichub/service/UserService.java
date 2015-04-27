@@ -1,11 +1,11 @@
-package com.respace.service;
+package com.musichub.service;
 
 import java.net.MalformedURLException;
 import java.util.List;
 
 import org.apache.commons.mail.EmailException;
 
-import com.respace.domain.RS_User;
+import com.musichub.domain.RS_User;
 
 
 
