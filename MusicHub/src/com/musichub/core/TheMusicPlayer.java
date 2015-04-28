@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -16,14 +18,14 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class TheMusicPlayer {
 
-  public static void play(final InputStream inputStream) {
+  public static void play(final URL url) {
     new Thread() {
       @Override
       public void run() {
         AudioInputStream audioInputStream = null;
         try {
           audioInputStream = AudioSystem
-              .getAudioInputStream(new BufferedInputStream(inputStream));
+              .getAudioInputStream(url);
         } catch (UnsupportedAudioFileException e) {
           e.printStackTrace();
           return;
@@ -55,7 +57,7 @@ public class TheMusicPlayer {
         	  //System.out.println("hi");
             bytesRead = 
                 audioInputStream.read(data, 0, data.length);
-            System.out.println(bytesToHex(data));
+            //System.out.println(bytesToHex(data));
             if (bytesRead >= 0)
               sourceDataLine.write(data, 0, bytesRead);
 //            try {
@@ -88,13 +90,17 @@ public class TheMusicPlayer {
 	}
 
   public static void play(final String wavFile)
-      throws FileNotFoundException {
-    play(new FileInputStream(wavFile));
+      throws FileNotFoundException, MalformedURLException {
+    //play(new FileInputStream(wavFile));
+    play(new URL(wavFile));
   }
   
-  public static void main(String[] argv){
+  public static void main(String[] argv) throws MalformedURLException{
 	  try {
-		TheMusicPlayer.play("C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav");
+		//TheMusicPlayer.play("C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav");
+		String urlWavFile = "http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
+		//TheMusicPlayer.play(urlWavFile);
+		TheMusicPlayer.play(urlWavFile);
 	} catch (FileNotFoundException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();

@@ -5,9 +5,11 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -49,20 +51,32 @@ public class CapitalizeServer {
 				// Open Source stream
 				AudioInputStream audioInputStream = null;
 				String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
-				wavFile = "https://www.dropbox.com/s/s56uj6rhdy7ffmu/timetolove.wav?dl=0";
-				wavFile = "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
-				try {
-					FileInputStream fstream = new FileInputStream(wavFile);
+				String urlWavFile = "http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
+				//wavFile = "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
+				
+				try{
+					URL url = new URL(urlWavFile);
+					//InputStream bufferedIn = new BufferedInputStream(url.openStream());
 					audioInputStream = AudioSystem
-							.getAudioInputStream(new BufferedInputStream(
-									fstream));
-				} catch (UnsupportedAudioFileException e) {
-					e.printStackTrace();
-					return;
-				} catch (IOException e) {
-					e.printStackTrace();
-					return;
+							.getAudioInputStream(url);
+				}catch(Exception ee){
+					ee.printStackTrace();
+					try {
+						FileInputStream fstream = new FileInputStream(wavFile);
+						audioInputStream = AudioSystem
+								.getAudioInputStream(new BufferedInputStream(
+										fstream));
+					} catch (UnsupportedAudioFileException e) {
+						e.printStackTrace();
+						return;
+					} catch (IOException e) {
+						e.printStackTrace();
+						return;
+					}
+					
 				}
+				
+				
 
 //
 //				sourceDataLine.start();
@@ -81,15 +95,24 @@ public class CapitalizeServer {
 				System.out.println("audioFileLength: "+audioFileLength+", durationInSeconds: "+durationInSeconds);
 							
 				byte[] data = new byte[52428];// 128Kb
+				int pId = 1;
 				try {
 					int bytesRead = 0;
 					while (bytesRead != -1) {
 
+						System.out.println("pID :"+pId++);
 						bytesRead = audioInputStream.read(data, 0, data.length);
+						System.out.println("bytesRead: "+bytesRead+", data.length: "+data.length);
+						
+						out.writeInt(bytesRead); // write length of the message
 						out.writeInt(data.length); // write length of the message
+						//System.out.println("!! "+bytesRead);
 						out.write(data);           // write the message
+						//System.out.println("!!2");
 
 					}
+					System.out.println("Send End!");
+					out.writeInt(0); // write length of the message
 					out.writeInt(0); // write length of the message
 				} catch (IOException e) {
 					e.printStackTrace();
