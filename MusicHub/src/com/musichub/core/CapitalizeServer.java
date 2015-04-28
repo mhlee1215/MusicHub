@@ -49,6 +49,8 @@ public class CapitalizeServer {
 				// Open Source stream
 				AudioInputStream audioInputStream = null;
 				String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
+				wavFile = "https://www.dropbox.com/s/s56uj6rhdy7ffmu/timetolove.wav?dl=0";
+				wavFile = "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
 				try {
 					FileInputStream fstream = new FileInputStream(wavFile);
 					audioInputStream = AudioSystem
