@@ -15,11 +15,13 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.xml.bind.DatatypeConverter;
 
 public class CapitalizeServer {
-
-	public static void main(String[] args) throws Exception {
-		// TODO Auto-generated method stub
+	static TimeLookup timeLookup = null;
+	
+	public CapitalizeServer() throws Exception{
+		timeLookup = new TimeLookup();
 		System.out.println("The capitalization server is running.");
 		int clientNumber = 0;
 		ServerSocket listener = new ServerSocket(9898);
@@ -30,6 +32,11 @@ public class CapitalizeServer {
 		} finally {
 			listener.close();
 		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		// TODO Auto-generated method stub
+		CapitalizeServer server = new CapitalizeServer();
 	}
 
 	private static class Capitalizer extends Thread {
@@ -92,22 +99,98 @@ public class CapitalizeServer {
 				int frameSize = audioFormat.getFrameSize();
 				float frameRate = audioFormat.getFrameRate();
 				float durationInSeconds = (audioFileLength / (frameSize * frameRate));
+				System.out.println("frameSize: "+frameSize+", frameRate: "+frameRate);
 				System.out.println("audioFileLength: "+audioFileLength+", durationInSeconds: "+durationInSeconds);
-							
-				byte[] data = new byte[52428];// 128Kb
-				int pId = 1;
+				
+				int pId = 0;
+				long beginTimeGap = 1000;
+				float packetSecLength = 0.1f; //Second
+				
+				out.writeLong((long)(1000*packetSecLength));
+				
+				int packetSize = (int) Math.ceil(frameSize*frameRate*packetSecLength);
+				byte[] data = new byte[packetSize];// 1 second
+				byte[] dataBuffer = new byte[(int) (packetSize*2)];// 1 second
+				byte[] dataBufferLarge = new byte[(int) (packetSize*10)];// 1 second
+				byte[] dataBufferLargeTmp = new byte[(int) (packetSize*10)];// 1 second
+				
+				long curTime = timeLookup.getCurrentTime();
 				try {
 					int bytesRead = 0;
-					while (bytesRead != -1) {
-
-						System.out.println("pID :"+pId++);
-						bytesRead = audioInputStream.read(data, 0, data.length);
-						System.out.println("bytesRead: "+bytesRead+", data.length: "+data.length);
+					int bytesReadAll = 0;
+					while (true) {
+						//System.out.println("pID :"+pId++);
+						//bytesRead = audioInputStream.read(data, 0, data.length);
+						bytesRead = audioInputStream.read(dataBuffer, 0, dataBuffer.length);
+						if (bytesRead != -1){
+							//break;
+							//System.out.println("bytesReadAll: "+bytesReadAll+", bytesRead:"+bytesRead);
+							System.arraycopy(dataBuffer, 0, dataBufferLarge, bytesReadAll, bytesRead);
+							bytesReadAll += bytesRead;
+						}
 						
-						out.writeInt(bytesRead); // write length of the message
-						out.writeInt(data.length); // write length of the message
-						//System.out.println("!! "+bytesRead);
-						out.write(data);           // write the message
+						//System.out.println("bytesReadAll: "+bytesReadAll+", "+bytesRead);
+						
+						
+						
+						//System.out.println("bytesRead: "+bytesRead+", data.length: "+data.length);
+						
+//						out.writeInt(bytesRead); // write length of the message
+//						out.writeInt(data.length); // write length of the message
+//						//System.out.println("!! "+bytesRead);
+//						out.write(data); 
+//						System.out.println(toHexString(data).substring(0, 10));
+						
+						//System.out.println(toHexString(dataBuffer).substring(0, 10));
+						if (bytesReadAll > packetSize)
+						{
+							System.arraycopy(dataBufferLarge, 0, data, 0, packetSize);
+							
+							System.arraycopy(dataBufferLarge, packetSize, dataBufferLargeTmp, 0, bytesReadAll-packetSize);
+							System.arraycopy(dataBufferLargeTmp, 0, dataBufferLarge, 0, bytesReadAll-packetSize);
+							bytesReadAll -= packetSize;
+							
+							//dataBufferLarge = dataBufferLargeTmp;
+							//dataBufferLargeTmp = new byte[(int) (packetSize*10)];
+							
+							long playTime = (long) (curTime + beginTimeGap + pId*packetSecLength*1000);
+							
+							
+							out.writeInt(packetSize); // write length of the message
+							out.writeInt(data.length); // write length of the message
+							out.writeLong(playTime);
+							//System.out.println("!! "+bytesRead);
+							out.write(data); 
+							pId++;
+							//System.out.println(toHexString(data).substring(0, 10));
+							//System.out.println("pID "+(pId++));
+						}else{
+							//Buffer flush when reading is finished.
+							//Content in buffer is less than packet size.
+							if(bytesRead == -1){
+								//long curTime = timeLookup.getCurrentTime();
+								long playTime = (long) (curTime + beginTimeGap + pId*packetSecLength*1000);
+								
+								out.writeInt(bytesReadAll); // write length of the message
+								out.writeInt(data.length); // write length of the message
+								out.writeLong(playTime);
+								//System.out.println("!! "+bytesRead);
+								out.write(data);  
+								bytesReadAll = 0;
+							}
+						}
+						
+						
+						
+						
+						if( bytesRead == -1 && bytesReadAll == 0)
+							break;
+						
+						
+//						out.writeInt(bytesRead); // write length of the message
+//						out.writeInt(data.length); // write length of the message
+//						//System.out.println("!! "+bytesRead);
+//						out.write(data);           // write the message
 						//System.out.println("!!2");
 
 					}
@@ -133,6 +216,14 @@ public class CapitalizeServer {
 
 		private void log(String message) {
 			System.out.println(message);
+		}
+		
+		public static String toHexString(byte[] array) {
+		    return DatatypeConverter.printHexBinary(array);
+		}
+
+		public static byte[] toByteArray(String s) {
+		    return DatatypeConverter.parseHexBinary(s);
 		}
 	}
 

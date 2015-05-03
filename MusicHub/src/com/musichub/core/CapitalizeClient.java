@@ -18,9 +18,11 @@ public class CapitalizeClient {
 	ReceiveDaemon receiveDaemon = null;
 	static PlayDaemon playDaemon = null;
 	static Queue<AudioPacket> packets = null;
+	static TimeLookup timeLookup = null;
 	
 	public CapitalizeClient() {
 		packets = new LinkedList<AudioPacket>();
+		timeLookup = new TimeLookup();
 	}
 
 	
@@ -28,20 +30,46 @@ public class CapitalizeClient {
 		
 		
 		SourceDataLine sourceDataLine = null;
+		long packetDuration = 0;
 		
-		public PlayDaemon(SourceDataLine sourceDataLine){
+		public PlayDaemon(SourceDataLine sourceDataLine, long packetDuration){
 			this.sourceDataLine = sourceDataLine;
+			this.packetDuration = packetDuration;
 		}
 		
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
+			long residual = 0;
 			while(packets.size() > 0){
 				System.out.println("packets.size() :"+packets.size());
 				
 				AudioPacket curPacket = packets.poll();
-				System.out.println(curPacket.toString());
+				//System.out.println(curPacket.toString());
+				long curTime = timeLookup.getCurrentTime();
+				System.out.println("curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
+				//If current time is already passed, just trow away packet
+				if (curPacket.playTime < curTime){
+					continue;
+				}
+				//Else, wait the time until the specified time.
+				else{
+					try {
+						long sleepTime = curPacket.playTime - curTime - residual;
+						System.out.println("sleep : "+sleepTime);
+						if(sleepTime > 0)
+							sleep(sleepTime);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				
+				long beforeTime = timeLookup.getCurrentTime();
 				sourceDataLine.write(curPacket.packet, 0, curPacket.length);
+				long afterTime = timeLookup.getCurrentTime();
+				residual = packetDuration - (afterTime - beforeTime);
+				System.out.println("time gap : "+((afterTime-beforeTime)/(float)1000));
 			}
 		}
 		
@@ -64,6 +92,7 @@ public class CapitalizeClient {
 				int bits = in.readInt();
 				int channels = in.readInt();
 				boolean isBigEndian = in.readBoolean();
+				long packetDuration = in.readLong();
 				
 				AudioFormat audioFormat2 = new AudioFormat(sampleRate, bits, channels, true, isBigEndian);
 				System.out.println(audioFormat2.toString());
@@ -73,7 +102,7 @@ public class CapitalizeClient {
 				sourceDataLine.open(audioFormat2);
 				sourceDataLine.start();
 				
-				playDaemon = new PlayDaemon(sourceDataLine);
+				playDaemon = new PlayDaemon(sourceDataLine, packetDuration);
 				//playDaemon.setDaemon(true);
 				
 				//PlayDaemon
@@ -96,17 +125,23 @@ public class CapitalizeClient {
 				try {
 					int byteRead = in.readInt();
 					int length = in.readInt();
+				
+					//System.out.println("byteRead:"+byteRead+", length:"+length);
 					if(length>0) {
+						long playTime = in.readLong();
 					    byte[] message = new byte[length];
+					    byte[] message2 = new byte[byteRead];
 					    //System.out.println("receive length!! : "+length);
 					    in.readFully(message, 0, length); // read the message
+					    System.arraycopy(message, 0, message2, 0, byteRead);
 					    //System.out.println("receive length : "+length);
 					    //sourceDataLine.write(message, 0, length);
 					    
-					    packets.add(new AudioPacket(byteRead, message));
+					    packets.add(new AudioPacket(byteRead, message2, playTime));
 					    
-					    
+					    //System.out.println("playDaemon.isAlive()? :"+playDaemon.isAlive());
 					    if(!playDaemon.isAlive()){
+					    	//System.out.println("packets.size():"+packets.size()+", bufferedCycle:"+bufferedCycle);
 					    	if(packets.size() > bufferedCycle){
 					    		System.out.println("Play Daemon started..");
 					    		playDaemon.start();
@@ -137,7 +172,7 @@ public class CapitalizeClient {
 			try {
 				Socket socket = new Socket(serverAddress, 9898);
 				in = new DataInputStream(socket.getInputStream());
-				receiveDaemon = new ReceiveDaemon(socket, in, 10000);
+				receiveDaemon = new ReceiveDaemon(socket, in, 10);
 				//receiveDaemon.setDaemon(true);
 				System.out.println("Receive Daemon started..");
 				receiveDaemon.start();
