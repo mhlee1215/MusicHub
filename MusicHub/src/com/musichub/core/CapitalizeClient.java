@@ -170,7 +170,9 @@ public class CapitalizeClient {
 		int timeGapBetweenFail = 1000;
 		while (true) {
 			try {
+				System.out.println("Trying to connect server..");
 				Socket socket = new Socket(serverAddress, 9898);
+				System.out.println("Trying to get inputstream..");
 				in = new DataInputStream(socket.getInputStream());
 				receiveDaemon = new ReceiveDaemon(socket, in, 10);
 				//receiveDaemon.setDaemon(true);
