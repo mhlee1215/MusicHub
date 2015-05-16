@@ -22,7 +22,7 @@ public class CapitalizeClient {
 	
 	public CapitalizeClient() {
 		packets = new LinkedList<AudioPacket>();
-		timeLookup = new TimeLookup();
+		//timeLookup = new TimeLookup();
 	}
 
 	
@@ -93,19 +93,16 @@ public class CapitalizeClient {
 				int channels = in.readInt();
 				boolean isBigEndian = in.readBoolean();
 				long packetDuration = in.readLong();
+				long severTime = in.readLong();
+				timeLookup = new TimeLookup(severTime);
 				
 				AudioFormat audioFormat2 = new AudioFormat(sampleRate, bits, channels, true, isBigEndian);
 				System.out.println(audioFormat2.toString());
-				DataLine.Info info = new DataLine.Info(SourceDataLine.class,
-						audioFormat2);
+				DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat2);
 				sourceDataLine = (SourceDataLine) AudioSystem.getLine(info);
 				sourceDataLine.open(audioFormat2);
 				sourceDataLine.start();
-				
 				playDaemon = new PlayDaemon(sourceDataLine, packetDuration);
-				//playDaemon.setDaemon(true);
-				
-				//PlayDaemon
 			} catch(IOException e){
 				e.printStackTrace();
 				return;
@@ -134,19 +131,14 @@ public class CapitalizeClient {
 					    //System.out.println("receive length!! : "+length);
 					    in.readFully(message, 0, length); // read the message
 					    System.arraycopy(message, 0, message2, 0, byteRead);
-					    //System.out.println("receive length : "+length);
-					    //sourceDataLine.write(message, 0, length);
 					    
 					    packets.add(new AudioPacket(byteRead, message2, playTime));
 					    
-					    //System.out.println("playDaemon.isAlive()? :"+playDaemon.isAlive());
 					    if(!playDaemon.isAlive()){
-					    	//System.out.println("packets.size():"+packets.size()+", bufferedCycle:"+bufferedCycle);
 					    	if(packets.size() > bufferedCycle){
 					    		System.out.println("Play Daemon started..");
 					    		playDaemon.start();
 					    	}
-					    		
 					    }
 					}else{
 						System.out.println("Receive End");

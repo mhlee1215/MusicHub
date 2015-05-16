@@ -47,6 +47,12 @@ public class TimeLookup {
 		this.offset = globalSinceMidnight - localSinceMidnight;
 	}
 	
+	public TimeLookup(long globalSinceMidnight){
+		Date localTime = new Date();
+		long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
+		this.offset = globalSinceMidnight - localSinceMidnight;
+	}
+	
 	public long getCurrentTime(){
 		Date localTime = new Date();
 		long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);

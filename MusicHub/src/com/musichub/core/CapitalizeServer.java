@@ -22,13 +22,14 @@ import javax.xml.bind.DatatypeConverter;
 
 public class CapitalizeServer {
 	static TimeLookup timeLookup = null;
+	private Capitalizer server;
 
 	public CapitalizeServer() throws Exception {
 		timeLookup = new TimeLookup();
 		System.out.println("The capitalization server is running.");
 		int clientNumber = 0;
 		ServerSocket listener = new ServerSocket(9898);
-		Capitalizer server = new Capitalizer();
+		server = new Capitalizer();
 		try {
 
 			while (true) {
@@ -42,6 +43,11 @@ public class CapitalizeServer {
 			listener.close();
 		}
 	}
+	
+	public List<Client> getClients(){
+		return server.getClients();
+	}
+	
 
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
@@ -49,11 +55,14 @@ public class CapitalizeServer {
 	}
 
 	private static class Capitalizer extends Thread {
-		private List<Socket> sockets;
-		private List<BufferedReader> ins;
-		private List<DataOutputStream> outs;
-		private List<Boolean> isInit;
-		private List<Boolean> isAlive;
+		
+		private List<Client> clients;
+		
+//		private List<Socket> sockets;
+//		private List<BufferedReader> ins;
+//		private List<DataOutputStream> outs;
+//		private List<Boolean> isInit;
+//		private List<Boolean> isAlive;
 
 		// private Socket socket;
 		private AudioInputStream audioInputStream = null;
@@ -64,12 +73,18 @@ public class CapitalizeServer {
 
 		// private int clientNumber;
 
+		public List<Client> getClients(){
+			return this.clients;
+		}
+		
 		public Capitalizer() {
-			sockets = new ArrayList<Socket>();
-			ins = new ArrayList<BufferedReader>();
-			outs = new ArrayList<DataOutputStream>();
-			isInit = new ArrayList<Boolean>();
-			isAlive = new ArrayList<Boolean>();
+//			sockets = new ArrayList<Socket>();
+//			ins = new ArrayList<BufferedReader>();
+//			outs = new ArrayList<DataOutputStream>();
+//			isInit = new ArrayList<Boolean>();
+//			isAlive = new ArrayList<Boolean>();
+			
+			clients = new ArrayList<Client>();
 
 			// Open Source stream
 
@@ -123,16 +138,23 @@ public class CapitalizeServer {
 		// }
 
 		public void addListener(Socket socket, int clientNumber) {
-			sockets.add(clientNumber, socket);
+			
 			log("New connection with client# " + clientNumber + " at " + socket);
 
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(
 						socket.getInputStream()));
-				ins.add(in);
+				
 				DataOutputStream out = new DataOutputStream(
 						socket.getOutputStream());
-				outs.add(out);
+				
+				clients.add(clientNumber, new Client(socket, in, out, false, true));
+				
+//				sockets.add(clientNumber, socket);	
+//				ins.add(in);
+//				outs.add(out);
+//				isInit.add(clientNumber, false);
+//				isAlive.add(clientNumber, true);
 				
 				
 				out.writeFloat(audioFormat.getSampleRate());
@@ -140,91 +162,92 @@ public class CapitalizeServer {
 				out.writeInt(audioFormat.getChannels());
 				out.writeBoolean(audioFormat.isBigEndian());
 				out.writeLong((long) (1000 * packetSecLength));
+				out.writeLong(timeLookup.getCurrentTime());
+				
 				//isInit.set(clientNumber, true);
 				
 			} catch (IOException e) {
 				log("Error Adding client# " + clientNumber + ": " + e);
 			}
 
-			isInit.add(clientNumber, false);
-			isAlive.add(clientNumber, true);
+			
 
 			log("INIT finished. " + clientNumber);
 
 		}
 
 		public void massWriteInt(int v) {
-			for (int sId = 0; sId < isAlive.size(); sId++) {
+			for (int sId = 0; sId < clients.size(); sId++) {
 				int clientNumber = sId;
-				if (!isAlive.get(clientNumber))
+				if (!clients.get(clientNumber).isAlive())
 					continue;
 
 				// Socket socket = sockets.get(clientNumber);
 				// BufferedReader in = ins.get(clientNumber);
-				DataOutputStream out = outs.get(clientNumber);
+				DataOutputStream out = clients.get(clientNumber).getOut();
 
 				try {
 					out.writeInt(v);
 				} catch (IOException e) {
 					log("Error handling client# " + clientNumber + ": " + e);
-					isAlive.set(clientNumber, false);
+					clients.get(clientNumber).setAlive(false);
 				}
 			}
 		}
 
 		public void massWriteLong(long v) {
-			for (int sId = 0; sId < isAlive.size(); sId++) {
+			for (int sId = 0; sId < clients.size(); sId++) {
 				int clientNumber = sId;
-				if (!isAlive.get(clientNumber))
+				if (!clients.get(clientNumber).isAlive())
 					continue;
 
 				// Socket socket = sockets.get(clientNumber);
 				// BufferedReader in = ins.get(clientNumber);
-				DataOutputStream out = outs.get(clientNumber);
+				DataOutputStream out = clients.get(clientNumber).getOut();
 
 				try {
 					out.writeLong(v);
 				} catch (IOException e) {
 					log("Error handling client# " + clientNumber + ": " + e);
-					isAlive.set(clientNumber, false);
+					clients.get(clientNumber).setAlive(false);
 				}
 			}
 		}
 
 		public void massWrite(byte[] data) {
-			for (int sId = 0; sId < isAlive.size(); sId++) {
+			for (int sId = 0; sId < clients.size(); sId++) {
 				int clientNumber = sId;
-				if (!isAlive.get(clientNumber))
+				if (!clients.get(clientNumber).isAlive())
 					continue;
 
 				// Socket socket = sockets.get(clientNumber);
 				// BufferedReader in = ins.get(clientNumber);
-				DataOutputStream out = outs.get(clientNumber);
+				DataOutputStream out = clients.get(clientNumber).getOut();
 
 				try {
 					out.write(data);
 				} catch (IOException e) {
 					log("Error handling client# " + clientNumber + ": " + e);
-					isAlive.set(clientNumber, false);
+					clients.get(clientNumber).setAlive(false);
 				}
 			}
 		}
 
 		public void massWriteBoolean(boolean v) {
-			for (int sId = 0; sId < isAlive.size(); sId++) {
+			for (int sId = 0; sId < clients.size(); sId++) {
 				int clientNumber = sId;
-				if (!isAlive.get(clientNumber))
+				if (!clients.get(clientNumber).isAlive())
 					continue;
 
 				// Socket socket = sockets.get(clientNumber);
 				// BufferedReader in = ins.get(clientNumber);
-				DataOutputStream out = outs.get(clientNumber);
+				DataOutputStream out = clients.get(clientNumber).getOut();
 
 				try {
 					out.writeBoolean(v);
 				} catch (IOException e) {
 					log("Error handling client# " + clientNumber + ": " + e);
-					isAlive.set(clientNumber, false);
+					clients.get(clientNumber).setAlive(false);
 				}
 			}
 		}
@@ -235,102 +258,50 @@ public class CapitalizeServer {
 			long curTime = timeLookup.getCurrentTime();
 
 			System.out.println("Sending packet..");
-			int curClient = isAlive.size();
 
 			try {
 
-				// System.out.println("Signed?"+audioFormat.getEncoding());
-				// Initialize
-
-				// if(1==1) continue;
-
 				byte[] data = new byte[packetSize];// 1 second
-				byte[] dataBuffer = new byte[(int) (packetSize * 2)];// 1 //
-																		// second
-				byte[] dataBufferLarge = new byte[(int) (packetSize * 10)];// 1
-																			// //
-																			// second
-				byte[] dataBufferLargeTmp = new byte[(int) (packetSize * 10)];// 1
-																				// second
+				byte[] dataBuffer = new byte[(int) (packetSize * 2)];			//buffer
+				byte[] dataBufferLarge = new byte[(int) (packetSize * 10)];		//buffer2
+				byte[] dataBufferLargeTmp = new byte[(int) (packetSize * 10)];	//buffer3
 
 				try {
 					int bytesRead = 0;
 					int bytesReadAll = 0;
 					while (true) {
-						// System.out.println("pID :"+pId++);
-						// bytesRead = audioInputStream.read(data, 0,
-						// data.length);
 						bytesRead = audioInputStream.read(dataBuffer, 0,
 								dataBuffer.length);
 						if (bytesRead != -1) {
-							// break;
-							// System.out.println("bytesReadAll: "
-							// + bytesReadAll + ", bytesRead:"
-							// + bytesRead);
 							System.arraycopy(dataBuffer, 0, dataBufferLarge,
 									bytesReadAll, bytesRead);
 							bytesReadAll += bytesRead;
 						}
 
-						// System.out.println("bytesReadAll: "+bytesReadAll+", "+bytesRead);
-
-						// System.out.println("bytesRead: "+bytesRead+", data.length: "+data.length);
-
-						// out.writeInt(bytesRead); // write length of the
-						// message
-						// out.writeInt(data.length); // write length of the
-						// message
-						// //System.out.println("!! "+bytesRead);
-						// out.write(data);
-						// System.out.println(toHexString(data).substring(0,
-						// 10));
-
-						// System.out.println(toHexString(dataBuffer).substring(0,
-						// 10));
 						while (bytesReadAll > packetSize) {
-							System.arraycopy(dataBufferLarge, 0, data, 0,
-									packetSize);
+							System.arraycopy(dataBufferLarge, 0, data, 0, packetSize);
 
-							System.arraycopy(dataBufferLarge, packetSize,
-									dataBufferLargeTmp, 0, bytesReadAll
-											- packetSize);
-							System.arraycopy(dataBufferLargeTmp, 0,
-									dataBufferLarge, 0, bytesReadAll
-											- packetSize);
+							System.arraycopy(dataBufferLarge, packetSize, dataBufferLargeTmp, 0, bytesReadAll - packetSize);
+							System.arraycopy(dataBufferLargeTmp, 0, dataBufferLarge, 0, bytesReadAll - packetSize);
 							bytesReadAll -= packetSize;
 
-							// dataBufferLarge = dataBufferLargeTmp;
-							// dataBufferLargeTmp = new byte[(int)
-							// (packetSize*10)];
+							long playTime = (long) (curTime + beginTimeGap + pId * packetSecLength * 1000);
 
-							long playTime = (long) (curTime + beginTimeGap + pId
-									* packetSecLength * 1000);
-
-							massWriteInt(packetSize); // write length of the
-														// message
-							massWriteInt(data.length); // write length of
-														// the message
+							massWriteInt(packetSize); // write length of the message
+							massWriteInt(data.length); // write length of the message
 							massWriteLong(playTime);
 							massWrite(data);
 
 							pId++;
-							// System.out.println(toHexString(data).substring(0,
-							// 10));
-							// System.out.println("pID "+(pId++));
 						}
 						// Buffer flush when reading is finished.
 						// Content in buffer is less than packet size.
 						if (bytesRead == -1) {
 							// long curTime = timeLookup.getCurrentTime();
-							long playTime = (long) (curTime + beginTimeGap + pId
-									* packetSecLength * 1000);
+							long playTime = (long) (curTime + beginTimeGap + pId * packetSecLength * 1000);
 
-							massWriteInt(bytesReadAll); // write length of
-														// the
-														// message
-							massWriteInt(data.length); // write length of
-														// the
-														// message
+							massWriteInt(bytesReadAll); // write length of the buffer
+							massWriteInt(data.length); // write length of the message
 							massWriteLong(playTime);
 							// System.out.println("!! "+bytesRead);
 							massWrite(data);
@@ -338,16 +309,8 @@ public class CapitalizeServer {
 							bytesReadAll = 0;
 						}
 
-						if (bytesRead == -1 && bytesReadAll == 0)
-							break;
-
-						// out.writeInt(bytesRead); // write length of the
-						// message
-						// out.writeInt(data.length); // write length of the
-						// message
-						// //System.out.println("!! "+bytesRead);
-						// out.write(data); // write the message
-						// System.out.println("!!2");
+						//If byte reading is finished.
+						if (bytesRead == -1 && bytesReadAll == 0) break;
 
 						try {
 							Thread.sleep((long) (packetSecLength * 200));
@@ -368,16 +331,16 @@ public class CapitalizeServer {
 
 			} finally {
 
-				for (int sId = 0; sId < isAlive.size(); sId++) {
+				for (int sId = 0; sId < clients.size(); sId++) {
 					int clientNumber = sId;
 					try {
-						sockets.get(clientNumber).close();
+						clients.get(clientNumber).getSockets().close();
 					} catch (IOException e) {
 						log("Couldn't close a socket #"+clientNumber+", what's going on?");
 					}
 
 					log("Connection with client# " + clientNumber + " closed");
-					isAlive.set(clientNumber, false);
+					clients.get(clientNumber).setAlive(false);
 				}
 
 			}
