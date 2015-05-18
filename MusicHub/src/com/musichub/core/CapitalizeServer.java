@@ -22,25 +22,51 @@ import javax.xml.bind.DatatypeConverter;
 
 public class CapitalizeServer {
 	static TimeLookup timeLookup = null;
-	private Capitalizer server;
+	private static Capitalizer server;
+	private static ListeningDaemon listeningDaemon;
 
 	public CapitalizeServer() throws Exception {
 		timeLookup = new TimeLookup();
+		listeningDaemon = new ListeningDaemon();
+	}
+	
+	public void startServer() throws Exception{
 		System.out.println("The capitalization server is running.");
-		int clientNumber = 0;
-		ServerSocket listener = new ServerSocket(9898);
-		server = new Capitalizer();
-		try {
-
-			while (true) {
-				System.out.println("Add!" + clientNumber);
-				server.addListener(listener.accept(), clientNumber++);
-				if (clientNumber == 1) {
-					server.start();
+		listeningDaemon.start();
+	}
+	
+	public void stopServer() throws Exception{
+		System.out.println("The capitalization server is stopped.");
+		listeningDaemon.stop();
+	}
+	
+	public static class ListeningDaemon extends Thread {
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			int clientNumber = 0;
+			ServerSocket listener;
+			try {
+				listener = new ServerSocket(9898);
+			
+				server = new Capitalizer();
+				try {
+	
+					while (true) {
+						System.out.println("Add!" + clientNumber);
+						server.addListener(listener.accept(), clientNumber++);
+						if (clientNumber == 1) {
+							server.start();
+						}
+					}
+				} finally {
+					listener.close();
 				}
+			
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		} finally {
-			listener.close();
 		}
 	}
 	
@@ -52,6 +78,7 @@ public class CapitalizeServer {
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		CapitalizeServer server = new CapitalizeServer();
+		server.startServer();
 	}
 
 	private static class Capitalizer extends Thread {
@@ -89,9 +116,9 @@ public class CapitalizeServer {
 			// Open Source stream
 
 			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
-			String urlWavFile = "///http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
-			// wavFile =
-			// "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
+			String urlWavFile = "//http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
+			 wavFile =
+			 "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
 
 			try {
 				URL url = new URL(urlWavFile);

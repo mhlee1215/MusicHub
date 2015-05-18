@@ -118,6 +118,7 @@ public class CapitalizeClient {
 		public void run() {
 			
 			//int i = 0;
+			int errCount = 0;
 			while (true) {
 				try {
 					int byteRead = in.readInt();
@@ -148,9 +149,21 @@ public class CapitalizeClient {
 						break;
 					}
 
-				} catch (IOException ex) {
+				} catch (Exception ex) {
 					//response = "Error: " + ex;
-					ex.printStackTrace();
+					//ex.printStackTrace();
+					System.err.println("Err to receive file");
+					errCount++;
+					if(errCount > 10){
+						System.err.println("Client Ends");
+						break;
+					}
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 		}

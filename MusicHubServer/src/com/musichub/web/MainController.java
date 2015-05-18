@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.musichub.core.CapitalizeClient;
+import com.musichub.core.CapitalizeServer;
 import com.musichub.core.WifiDetector;
 
 
@@ -22,6 +23,7 @@ import com.musichub.core.WifiDetector;
 @Controller
 public class MainController {
 	CapitalizeClient client;
+	CapitalizeServer server;
 
 	private Logger logger = Logger.getLogger(getClass());
 	
@@ -99,6 +101,36 @@ public class MainController {
     }
 	
 	
+	@RequestMapping("/startServer.do")
+    public @ResponseBody String startServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
+		System.out.println("connect to Server! :"+hostIP);
+		
+		if (server == null){
+			server = new CapitalizeServer();
+		}
+		
+		server.startServer();
+				
+		return "success";
+    }
+	
+	@RequestMapping("/stopServer.do")
+    public @ResponseBody String stopServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+//		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
+//		System.out.println("connect to Server! :"+hostIP);
+//		
+//		CapitalizeClient client = new CapitalizeClient();
+//		client.connectToServer(hostIP);
+		
+		if (server != null){
+			server.stopServer();
+		}
+		
+		return "success";
+    }
 	
 	@RequestMapping("/connectToServer.do")
     public @ResponseBody String connectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {

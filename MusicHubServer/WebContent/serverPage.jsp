@@ -6,9 +6,59 @@
 	<body>
 	 	<%@include file = "header.jsp"%>
 		
+		<script>
+    $(function() {
+         $("#id_btn_startServer").click(function() {
+            if(hostIP.length > 0)
+            {
+                $.ajax({
+                  type: "POST",
+                  url: "startServer.do",
+                  cache: false,
+                  dataType: "text",
+                  success: onConnectSuccess
+                });
+            }
+        });
+        $("#id_btn_stopServer").click(function() {
+			$.ajax({
+			  type: "POST",
+			  url: "stopServer.do",
+			  cache: false,
+			  dataType: "text",
+			  success: onStopSuccess
+			});
+        });
+        /*
+        $("#resultLog").ajaxError(function(event, request, settings, exception) {
+          $("#resultLog").html("Error Calling: " + settings.url + "<br />HTTP Code: " + request.status);
+        });
+        */
+ 
+        function onStartSuccess(data)
+        {
+        	if (data == 'success'){
+        		$("#id_btn_startServer").hide();
+            	$("#id_btn_stopServer").show();	
+        	}
+        }
+        
+        function onStopSuccess(data)
+        {
+        	if (data == 'success'){
+        		$("#id_btn_startServer").show();
+            	$("#id_btn_stopServer").hide();	
+        	}
+        }
+ 
+    });
+	</script>
+		
 				<p>Broadcasting</p>
             <input type="file"></input>
-            <a href="#" data-role="button" data-icon="star" data-theme="a">Broadcasting</a>
+            <a id="id_btn_startServer" href="#" data-role="button" data-icon="star" data-theme="a">Broadcasting</a>
+            <a id="id_btn_stopServer" style="display:none" href="#" data-role="button" data-icon="star" data-theme="a">Stop Broadcasting</a>
+            
             
             <div data-role="fieldcontain">
 				<label for="slider2">Lazy Play:</label>
