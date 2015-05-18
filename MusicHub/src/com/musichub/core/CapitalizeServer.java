@@ -131,8 +131,7 @@ public class CapitalizeServer {
 
 			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
 			String urlWavFile = "//http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
-			 //wavFile =
-			 //"/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
+			String wavFile2 = "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
 
 			try {
 				URL url = new URL(urlWavFile);
@@ -151,8 +150,18 @@ public class CapitalizeServer {
 					e.printStackTrace();
 					return;
 				} catch (IOException e) {
-					e.printStackTrace();
-					return;
+					try {
+						FileInputStream fstream = new FileInputStream(wavFile2);
+						audioInputStream = AudioSystem
+								.getAudioInputStream(new BufferedInputStream(
+										fstream));
+					} catch (UnsupportedAudioFileException eeee) {
+						eeee.printStackTrace();
+						return;
+					} catch (IOException eee) {
+						eee.printStackTrace();
+						return;
+					}
 				}
 
 			}
