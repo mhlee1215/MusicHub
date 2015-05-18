@@ -19,6 +19,7 @@ public class CapitalizeClient {
 	static PlayDaemon playDaemon = null;
 	static Queue<AudioPacket> packets = null;
 	static TimeLookup timeLookup = null;
+
 	
 	public CapitalizeClient() {
 		packets = new LinkedList<AudioPacket>();
@@ -81,6 +82,16 @@ public class CapitalizeClient {
 		DataInputStream in = null;
 		SourceDataLine sourceDataLine = null;
 		int bufferedCycle = 0;
+		
+		boolean isInit = false;
+		
+		//Init values
+		float sampleRate;
+		int bits;
+		int channels;
+		boolean isBigEndian;
+		long packetDuration;
+		long severTime;
 
 		public ReceiveDaemon(Socket socket, DataInputStream in, int bufferedCycle) {
 			this.socket = socket;
@@ -88,13 +99,16 @@ public class CapitalizeClient {
 			this.bufferedCycle = bufferedCycle;
 			
 			try {			
-				float sampleRate = in.readFloat();
-				int bits = in.readInt();
-				int channels = in.readInt();
-				boolean isBigEndian = in.readBoolean();
-				long packetDuration = in.readLong();
-				long severTime = in.readLong();
-				timeLookup = new TimeLookup(severTime);
+				if(!isInit){
+					sampleRate = in.readFloat();
+					bits = in.readInt();
+					channels = in.readInt();
+					isBigEndian = in.readBoolean();
+					packetDuration = in.readLong();
+					severTime = in.readLong();
+					timeLookup = new TimeLookup(severTime);
+					isInit = true;
+				}
 				
 				AudioFormat audioFormat2 = new AudioFormat(sampleRate, bits, channels, true, isBigEndian);
 				System.out.println(audioFormat2.toString());
@@ -179,7 +193,8 @@ public class CapitalizeClient {
 				Socket socket = new Socket(serverAddress, 9898);
 				System.out.println("Trying to get inputstream..");
 				in = new DataInputStream(socket.getInputStream());
-				receiveDaemon = new ReceiveDaemon(socket, in, 10);
+				if (receiveDaemon == null)
+					receiveDaemon = new ReceiveDaemon(socket, in, 10);
 				//receiveDaemon.setDaemon(true);
 				System.out.println("Receive Daemon started..");
 				receiveDaemon.start();
