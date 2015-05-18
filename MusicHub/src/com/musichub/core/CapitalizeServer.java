@@ -23,31 +23,44 @@ import javax.xml.bind.DatatypeConverter;
 public class CapitalizeServer {
 	static TimeLookup timeLookup = null;
 	private static Capitalizer server;
-	private static ListeningDaemon listeningDaemon;
-
+	private ListeningDaemon listeningDaemon;
+	private boolean start;
+	private static ServerSocket listener;
+	
 	public CapitalizeServer() throws Exception {
 		timeLookup = new TimeLookup();
-		listeningDaemon = new ListeningDaemon();
+		if(listeningDaemon == null)
+			listeningDaemon = new ListeningDaemon();
+		start = false;
+		listener = new ServerSocket(9898);
 	}
 	
 	public void startServer() throws Exception{
-		System.out.println("The capitalization server is running.");
-		listeningDaemon.start();
+		if(start == false){
+			System.out.println("The capitalization server is running.");
+			listeningDaemon.start();
+			start = true;
+		}
 	}
 	
 	public void stopServer() throws Exception{
-		System.out.println("The capitalization server is stopped.");
-		listeningDaemon.stop();
+		if(start == true){
+			System.out.println("The capitalization server is stopped.");
+			listeningDaemon.stop();
+			start = false;
+		}
 	}
+	
+	
 	
 	public static class ListeningDaemon extends Thread {
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
 			int clientNumber = 0;
-			ServerSocket listener;
+			
 			try {
-				listener = new ServerSocket(9898);
+				
 			
 				server = new Capitalizer();
 				try {
@@ -79,6 +92,7 @@ public class CapitalizeServer {
 		// TODO Auto-generated method stub
 		CapitalizeServer server = new CapitalizeServer();
 		server.startServer();
+		System.err.println("END!?!?");
 	}
 
 	private static class Capitalizer extends Thread {
@@ -117,8 +131,8 @@ public class CapitalizeServer {
 
 			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
 			String urlWavFile = "//http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
-			 wavFile =
-			 "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
+			 //wavFile =
+			 //"/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
 
 			try {
 				URL url = new URL(urlWavFile);

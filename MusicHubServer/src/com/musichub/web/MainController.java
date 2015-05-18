@@ -105,14 +105,14 @@ public class MainController {
     public @ResponseBody String startServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
 		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
-		System.out.println("connect to Server! :"+hostIP);
+		System.out.println("start Server! :"+hostIP);
 		
 		if (server == null){
 			server = new CapitalizeServer();
 		}
-		
+		System.out.println("start?");
 		server.startServer();
-				
+		System.out.println("start!");
 		return "success";
     }
 	
