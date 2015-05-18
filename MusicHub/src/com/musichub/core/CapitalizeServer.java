@@ -89,7 +89,7 @@ public class CapitalizeServer {
 			// Open Source stream
 
 			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
-			String urlWavFile = "http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
+			String urlWavFile = "///http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
 			// wavFile =
 			// "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
 
@@ -99,7 +99,8 @@ public class CapitalizeServer {
 				// BufferedInputStream(url.openStream());
 				audioInputStream = AudioSystem.getAudioInputStream(url);
 			} catch (Exception ee) {
-				ee.printStackTrace();
+				//ee.printStackTrace();
+				System.err.println("Fail to load online file.");
 				try {
 					FileInputStream fstream = new FileInputStream(wavFile);
 					audioInputStream = AudioSystem
@@ -156,6 +157,12 @@ public class CapitalizeServer {
 //				isInit.add(clientNumber, false);
 //				isAlive.add(clientNumber, true);
 				
+				System.out.println("audioFormat.getSampleRate():"+audioFormat.getSampleRate());
+				System.out.println("audioFormat.getSampleSizeInBits():"+audioFormat.getSampleSizeInBits());
+				System.out.println("audioFormat.getChannels():"+audioFormat.getChannels());
+				System.out.println("audioFormat.isBigEndian():"+audioFormat.isBigEndian());
+				System.out.println("(long) (1000 * packetSecLength):"+(long) (1000 * packetSecLength));
+				System.out.println("timeLookup.getCurrentTime():"+timeLookup.getCurrentTime());
 				
 				out.writeFloat(audioFormat.getSampleRate());
 				out.writeInt(audioFormat.getSampleSizeInBits());
@@ -257,7 +264,7 @@ public class CapitalizeServer {
 			int pId = 0;
 			long curTime = timeLookup.getCurrentTime();
 
-			System.out.println("Sending packet..");
+			//System.out.println("Sending packet..");
 
 			try {
 
@@ -270,6 +277,8 @@ public class CapitalizeServer {
 					int bytesRead = 0;
 					int bytesReadAll = 0;
 					while (true) {
+						//System.out.println("Send packet");
+						//long beginTime = timeLookup.getCurrentTime();
 						bytesRead = audioInputStream.read(dataBuffer, 0,
 								dataBuffer.length);
 						if (bytesRead != -1) {
@@ -312,12 +321,20 @@ public class CapitalizeServer {
 						//If byte reading is finished.
 						if (bytesRead == -1 && bytesReadAll == 0) break;
 
-						try {
-							Thread.sleep((long) (packetSecLength * 200));
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+						long endTime = timeLookup.getCurrentTime();
+						long expectedEndTime = (long) (curTime + pId * packetSecLength * 1000);
+						if( expectedEndTime < endTime){
+							System.err.println("Capacity Overhead!");
+						}else{
+							try {
+								Thread.sleep((long) (Math.max(0, expectedEndTime - endTime - 100)));
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}	
 						}
+						
+						
 
 					}
 					System.out.println("Send End!");
