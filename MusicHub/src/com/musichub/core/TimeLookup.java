@@ -19,9 +19,24 @@ public class TimeLookup {
 		NTPUDPClient timeClient = new NTPUDPClient();
 		InetAddress inetAddress = null;
 		TimeInfo timeInfo = null;
+		this.offset = 0;
 		try {
 			inetAddress = InetAddress.getByName(TIME_SERVER);
 			timeInfo = timeClient.getTime(inetAddress);
+			
+			long returnTime = timeInfo.getReturnTime();
+			Date time = new Date(returnTime);
+			long globalSinceMidnight = time.getTime() % (24 * 60 * 60 * 1000);
+			// System.out.println("Time from " + TIME_SERVER + ": " + time);
+			// System.out.println(returnTime);
+			//System.out.println("globalSinceMidnight: " + globalSinceMidnight);
+
+			// Local time
+			Date localTime = new Date();
+			long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
+			//System.out.println("localSinceMidnight: " + localSinceMidnight);
+
+			this.offset = globalSinceMidnight - localSinceMidnight;
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -32,19 +47,7 @@ public class TimeLookup {
 			//return offset;
 		}
 		
-		long returnTime = timeInfo.getReturnTime();
-		Date time = new Date(returnTime);
-		long globalSinceMidnight = time.getTime() % (24 * 60 * 60 * 1000);
-		// System.out.println("Time from " + TIME_SERVER + ": " + time);
-		// System.out.println(returnTime);
-		//System.out.println("globalSinceMidnight: " + globalSinceMidnight);
-
-		// Local time
-		Date localTime = new Date();
-		long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
-		//System.out.println("localSinceMidnight: " + localSinceMidnight);
-
-		this.offset = globalSinceMidnight - localSinceMidnight;
+		
 	}
 	
 	public TimeLookup(long globalSinceMidnight){
