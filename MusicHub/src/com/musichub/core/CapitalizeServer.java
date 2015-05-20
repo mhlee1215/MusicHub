@@ -37,7 +37,7 @@ public class CapitalizeServer {
 	
 	public void startServer() throws Exception{
 		if(start == false){
-			System.out.println("The capitalization server is running.");
+			log("The capitalization server is running.");
 			listeningDaemon.start();
 			start = true;
 		}
@@ -45,7 +45,7 @@ public class CapitalizeServer {
 	
 	public void stopServer() throws Exception{
 		if(start == true){
-			System.out.println("The capitalization server is stopped.");
+			log("The capitalization server is stopped.");
 			listeningDaemon.stop();
 			start = false;
 		}
@@ -66,7 +66,7 @@ public class CapitalizeServer {
 				try {
 	
 					while (true) {
-						System.out.println("Add!" + clientNumber);
+						log("Waiting.. next is " + clientNumber);
 						server.addListener(listener.accept(), clientNumber++);
 						if (clientNumber == 1) {
 							server.start();
@@ -109,7 +109,7 @@ public class CapitalizeServer {
 		private AudioInputStream audioInputStream = null;
 		private AudioFormat audioFormat = null;
 		private int packetSize = 0;
-		private float packetSecLength = 0.1f; // Second
+		private float packetSecLength = .1f; // Second
 		private long beginTimeGap = 1000;
 
 		// private int clientNumber;
@@ -172,9 +172,9 @@ public class CapitalizeServer {
 			int frameSize = audioFormat.getFrameSize();
 			float frameRate = audioFormat.getFrameRate();
 			float durationInSeconds = (audioFileLength / (frameSize * frameRate));
-			System.out.println("frameSize: " + frameSize + ", frameRate: "
+			log("frameSize: " + frameSize + ", frameRate: "
 					+ frameRate);
-			System.out.println("audioFileLength: " + audioFileLength
+			log("audioFileLength: " + audioFileLength
 					+ ", durationInSeconds: " + durationInSeconds);
 
 			packetSize = (int) Math.ceil(frameSize * frameRate
@@ -207,12 +207,12 @@ public class CapitalizeServer {
 //				isInit.add(clientNumber, false);
 //				isAlive.add(clientNumber, true);
 				
-				System.out.println("audioFormat.getSampleRate():"+audioFormat.getSampleRate());
-				System.out.println("audioFormat.getSampleSizeInBits():"+audioFormat.getSampleSizeInBits());
-				System.out.println("audioFormat.getChannels():"+audioFormat.getChannels());
-				System.out.println("audioFormat.isBigEndian():"+audioFormat.isBigEndian());
-				System.out.println("(long) (1000 * packetSecLength):"+(long) (1000 * packetSecLength));
-				System.out.println("timeLookup.getCurrentTime():"+timeLookup.getCurrentTime());
+				log("audioFormat.getSampleRate():"+audioFormat.getSampleRate());
+				log("audioFormat.getSampleSizeInBits():"+audioFormat.getSampleSizeInBits());
+				log("audioFormat.getChannels():"+audioFormat.getChannels());
+				log("audioFormat.isBigEndian():"+audioFormat.isBigEndian());
+				log("(long) (1000 * packetSecLength):"+(long) (1000 * packetSecLength));
+				log("timeLookup.getCurrentTime():"+timeLookup.getCurrentTime());
 				
 				out.writeFloat(audioFormat.getSampleRate());
 				out.writeInt(audioFormat.getSampleSizeInBits());
@@ -314,7 +314,7 @@ public class CapitalizeServer {
 			int pId = 0;
 			long curTime = timeLookup.getCurrentTime();
 
-			//System.out.println("Sending packet..");
+			//log("Sending packet..");
 
 			try {
 
@@ -327,17 +327,19 @@ public class CapitalizeServer {
 					int bytesRead = 0;
 					int bytesReadAll = 0;
 					while (true) {
-						//System.out.println("Send packet");
+						log("Send packet #"+pId);
 						//long beginTime = timeLookup.getCurrentTime();
-						bytesRead = audioInputStream.read(dataBuffer, 0,
-								dataBuffer.length);
-						if (bytesRead != -1) {
-							System.arraycopy(dataBuffer, 0, dataBufferLarge,
-									bytesReadAll, bytesRead);
-							bytesReadAll += bytesRead;
+						if(bytesReadAll < packetSize){
+							bytesRead = audioInputStream.read(dataBuffer, 0,
+									dataBuffer.length);
+							if (bytesRead != -1) {
+								System.arraycopy(dataBuffer, 0, dataBufferLarge,
+										bytesReadAll, bytesRead);
+								bytesReadAll += bytesRead;
+							}
 						}
 
-						while (bytesReadAll > packetSize) {
+						if (bytesReadAll >= packetSize) {
 							System.arraycopy(dataBufferLarge, 0, data, 0, packetSize);
 
 							System.arraycopy(dataBufferLarge, packetSize, dataBufferLargeTmp, 0, bytesReadAll - packetSize);
@@ -350,7 +352,7 @@ public class CapitalizeServer {
 							massWriteInt(data.length); // write length of the message
 							massWriteLong(playTime);
 							massWrite(data);
-
+							
 							pId++;
 						}
 						// Buffer flush when reading is finished.
@@ -359,24 +361,30 @@ public class CapitalizeServer {
 							// long curTime = timeLookup.getCurrentTime();
 							long playTime = (long) (curTime + beginTimeGap + pId * packetSecLength * 1000);
 
+							log("flush massWrite #"+pId);
 							massWriteInt(bytesReadAll); // write length of the buffer
 							massWriteInt(data.length); // write length of the message
 							massWriteLong(playTime);
-							// System.out.println("!! "+bytesRead);
+							// log("!! "+bytesRead);
 							massWrite(data);
+							log("flush massWrite end #"+pId);
 
 							bytesReadAll = 0;
 						}
 
 						//If byte reading is finished.
-						if (bytesRead == -1 && bytesReadAll == 0) break;
+						if (bytesRead == -1 && bytesReadAll == 0){
+							log("Byte read finished.");
+							break;
+						}
 
 						long endTime = timeLookup.getCurrentTime();
 						long expectedEndTime = (long) (curTime + pId * packetSecLength * 1000);
 						if( expectedEndTime < endTime){
-							System.err.println("Capacity Overhead!");
+							log("Capacity Overhead!");
 						}else{
 							try {
+								log("Sleep : ["+(expectedEndTime - endTime - 100)+"]");
 								Thread.sleep((long) (Math.max(0, expectedEndTime - endTime - 100)));
 							} catch (InterruptedException e) {
 								// TODO Auto-generated catch block
@@ -387,7 +395,7 @@ public class CapitalizeServer {
 						
 
 					}
-					System.out.println("Send End!");
+					log("Send End!");
 
 					massWriteInt(0); // write length of the message
 					massWriteInt(0); // write length of the message
@@ -414,9 +422,9 @@ public class CapitalizeServer {
 
 		}
 
-		private void log(String message) {
-			System.out.println(message);
-		}
+//		private void log(String message) {
+//			System.out.println("[SERVER] "+message);
+//		}
 
 		public static String toHexString(byte[] array) {
 			return DatatypeConverter.printHexBinary(array);
@@ -425,6 +433,10 @@ public class CapitalizeServer {
 		public static byte[] toByteArray(String s) {
 			return DatatypeConverter.parseHexBinary(s);
 		}
+	}
+	
+	private static void log(String message) {
+		System.out.println("[SERVER] "+message);
 	}
 
 }

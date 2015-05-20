@@ -110,9 +110,9 @@ public class MainController {
 		if (server == null){
 			server = new CapitalizeServer();
 		}
-		System.out.println("start?");
+		//System.out.println("start?");
 		server.startServer();
-		System.out.println("start!");
+		//System.out.println("start!");
 		return "success";
     }
 	
@@ -138,11 +138,14 @@ public class MainController {
 		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
 		System.out.println("connect to Server! :"+hostIP);
 		
-		if (client == null){
+		//if (client == null){
 			client = new CapitalizeClient();
-		}
+			client.connectToServer(hostIP);
+		//}else{
+		//	client.resumePlay();
+		//}
 		
-		client.connectToServer(hostIP);
+		
 				
 		return "success";
     }

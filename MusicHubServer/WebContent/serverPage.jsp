@@ -42,7 +42,7 @@
  
         function onStartSuccess(data)
         {
-        	alert(data);
+        	//alert(data);
         	if (data == 'success'){
         		$("#id_btn_startServer").hide();
             	$("#id_btn_stopServer").show();	

@@ -39,7 +39,8 @@ public class TimeLookup {
 			this.offset = globalSinceMidnight - localSinceMidnight;
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println("Fail to get time from server");
+			//e.printStackTrace();
 			//this.offset = offset;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

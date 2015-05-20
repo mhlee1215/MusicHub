@@ -9,10 +9,13 @@
 	 	<%@include file = "header.jsp"%>
 		
 		<script>
+		var isConnected = false;
     $(function() {
     	
     	$('#id_host_ip').ipAddress();
         $("#id_btn_connectToServer").click(function() {
+        	if(isConnected) return;
+        	isConnected = true;
             var hostIP = $.trim($("#id_host_ip").val());
             if(hostIP.length > 0)
             {
@@ -27,6 +30,8 @@
             }
         });
         $("#id_btn_disconnectToServer").click(function() {
+        	if(!isConnected) return;
+        	isConnected = false;
 			$.ajax({
 			  type: "POST",
 			  url: "disconnectToServer.do",
