@@ -12,17 +12,28 @@
 		var isConnected = false;
     $(function() {
     	
+    	/* $.ajax({
+            type: "POST",
+            url: "getWifiSignal.do",
+            data: ({}),
+            cache: false,
+            dataType: "text",
+            success: onWifiSignalSuccess
+        }); */
+    	
+    	
     	$('#id_host_ip').ipAddress();
         $("#id_btn_connectToServer").click(function() {
         	if(isConnected) return;
         	isConnected = true;
             var hostIP = $.trim($("#id_host_ip").val());
+            var threshold = $("#id_turn_on_threshold").val(); 
             if(hostIP.length > 0)
             {
                 $.ajax({
                   type: "POST",
                   url: "connectToServer.do",
-                  data: ({hostIP: hostIP}),
+                  data: ({hostIP: hostIP, threshold:threshold}),
                   cache: false,
                   dataType: "text",
                   success: onConnectSuccess
@@ -45,6 +56,20 @@
           $("#resultLog").html("Error Calling: " + settings.url + "<br />HTTP Code: " + request.status);
         });
         */
+        
+        function onWifiSignalSuccess(data){
+        	//alert(data);
+        	$("#id_wifi_signal").text(data);
+        	
+        	$.ajax({
+                type: "POST",
+                url: "getWifiSignal.do",
+                data: ({}),
+                cache: false,
+                dataType: "text",
+                success: onWifiSignalSuccess
+            });
+        }
  
         function onConnectSuccess(data)
         {
@@ -66,10 +91,12 @@
 	</script>
 		
 			<p>Current IP : ${myIP}</p>
-			<p>WIFI Signal : ${wifi_signal}</p>
+			<p>WIFI Signal : <span id="id_wifi_signal">${wifi_signal}</span></p>
         	<div data-role="fieldcontain">
 	         <label for="name"">Host IP Address (For Listening): </label>
 	         <input type="text" name="name" id="id_host_ip" value=""  />
+	         <label for="name"">Turn on signal threshold: </label>
+	         <input type="range" name="slider-1" id="id_turn_on_threshold" value="-45" min="-100" max="0" />
 	         <a href="#" data-role="button" data-icon="star" id="id_btn_connectToServer">Connect</a>
 	         <a href="#" data-role="button" data-icon="star" id="id_btn_disconnectToServer" style="display:none">Disconnect</a>
 			</div>

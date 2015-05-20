@@ -1,6 +1,7 @@
 package com.musichub.web;
 
 
+import java.io.IOException;
 import java.net.Inet4Address;
 
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +23,7 @@ import com.musichub.core.WifiDetector;
 
 @Controller
 public class MainController {
-	CapitalizeClient client;
+	RegionDetectorDaemon detectorDaemon;
 	CapitalizeServer server;
 
 	private Logger logger = Logger.getLogger(getClass());
@@ -136,33 +137,110 @@ public class MainController {
     public @ResponseBody String connectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
 		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
-		System.out.println("connect to Server! :"+hostIP);
+		int threshold = ServletRequestUtils.getIntParameter(request, "threshold", -45);
+		System.out.println("connect to Server!!! :"+hostIP);
 		
 		//if (client == null){
-			client = new CapitalizeClient();
-			client.connectToServer(hostIP);
+			
+		//if (detectorDaemon == null){
+			detectorDaemon = new RegionDetectorDaemon(hostIP, threshold);
+			detectorDaemon.start();
+		//}
+			
 		//}else{
 		//	client.resumePlay();
 		//}
-		
-		
-				
 		return "success";
     }
 	
-	@RequestMapping("/disconnectToServer.do")
-    public @ResponseBody String disconnectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
+	@RequestMapping("/getWifiSignal.do")
+    public @ResponseBody String getWifiSignal(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-//		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
-//		System.out.println("connect to Server! :"+hostIP);
-//		
-//		CapitalizeClient client = new CapitalizeClient();
-//		client.connectToServer(hostIP);
-		
-		if (client != null){
-			client.disconnectToServer();
+		try {
+			Thread.sleep(300);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		
+		int wifiSignal = WifiDetector.getSignal();
+		String wifi_signal = "";
+		if(wifiSignal == WifiDetector.SIGNAL_INIT)
+			wifi_signal = "NONE-WIFI";
+		else
+			wifi_signal = Integer.toString(wifiSignal);
+		
+		return wifi_signal;
+    }
+	
+	
+	
+	@RequestMapping("/disconnectToServer.do")
+    public @ResponseBody String disconnectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {		
+		detectorDaemon.stopWorking();
+		detectorDaemon.stop();
 		
 		return "success";
     }
+	
+	public class RegionDetectorDaemon extends Thread {
+		CapitalizeClient client;
+		String hostIP;
+		int threshold;
+		
+		public RegionDetectorDaemon(String hostIP, int threshold){
+			this.hostIP = hostIP;
+			this.threshold = threshold;
+		}
+		
+		public void stopWorking(){
+			if(client != null)
+				client.disconnectToServer();
+		}
+		
+		@Override
+		public void run() {
+			//System.out.println("Detector run!!");
+			// TODO Auto-generated method stub
+			boolean isPlayed = false;
+			while(true){
+				int signal = WifiDetector.getSignal();
+				
+				System.out.println("Current signal :"+signal+", threshold:"+threshold);
+				
+				if(signal > threshold || signal == WifiDetector.SIGNAL_INIT){
+					if(!isPlayed){
+						try {
+							if(client == null){
+								client = new CapitalizeClient();
+								client.connectToServer(hostIP);
+							}
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						isPlayed = true;
+					}else{
+						//Do nothing.
+					}
+				}else{
+					if (client != null){
+						client.disconnectToServer();
+						client = null;
+					}
+					isPlayed = false;
+				}
+				
+				try {
+					Thread.sleep(300);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 }
