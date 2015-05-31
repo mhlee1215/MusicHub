@@ -23,8 +23,9 @@ import com.musichub.core.WifiDetector;
 
 @Controller
 public class MainController {
-	RegionDetectorDaemon detectorDaemon;
+	//RegionDetectorDaemon detectorDaemon;
 	CapitalizeServer server;
+	CapitalizeClient client;
 
 	private Logger logger = Logger.getLogger(getClass());
 	
@@ -78,10 +79,10 @@ public class MainController {
 		model.addObject("wifi_signal", wifi_signal);
 		
 
-		if (detectorDaemon != null){
-			model.addObject("isPlay", detectorDaemon.isPlay());
-			model.addObject("ip", detectorDaemon.getHostIP());
-			model.addObject("name", detectorDaemon.getClientName());
+		if (client != null){
+			model.addObject("isPlay", client.isPlay());
+			model.addObject("ip", client.getServerAddress());
+			model.addObject("name", client.getClientName());
 		}
 		
 				
@@ -99,7 +100,13 @@ public class MainController {
 		if (server != null){
 			model.addObject("isPlay", server.isStart());
 			model.addObject("clients", server.getClients());
-			
+			model.addObject("isLazy", server.isLazy()==true?"on":"off");
+			model.addObject("lazyNum", server.getLazyNum());
+			model.addObject("threshold", server.getThreshold());
+		}else{
+			model.addObject("isLazy", "off");
+			model.addObject("lazyNum", 2);
+			model.addObject("threshold", -45);
 		}
 				
 		return model;
@@ -130,11 +137,10 @@ public class MainController {
 		//{isLazy:islazy, lazyNum:lazyNum, threshold:threshold}),
 		//log("start Server! :"+hostIP);
 		
+		if(server != null)
+			server.stopServer();
 		
-		if (server == null){
-			server = new CapitalizeServer(isLazy, lazyNum, threshold);
-		}
-		//System.out.println("start?");
+		server = new CapitalizeServer(isLazy, lazyNum, threshold);
 		server.startServer();
 		//System.out.println("start!");
 		return "success";
@@ -151,6 +157,7 @@ public class MainController {
 		
 		if (server != null){
 			server.stopServer();
+			//server = null;
 		}
 		
 		return "success";
@@ -161,15 +168,18 @@ public class MainController {
 
 		String name = ServletRequestUtils.getStringParameter(request, "clientName", "loalhost");
 		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
-		int threshold = ServletRequestUtils.getIntParameter(request, "threshold", -45);
-		log("connect to Server!!! :"+hostIP+", "+name+", threshold:"+threshold);
+		//int threshold = ServletRequestUtils.getIntParameter(request, "threshold", -45);
+		log("connect to Server!!! :"+hostIP+", "+name);
 		
 		//if (client == null){
 			
 		//if (detectorDaemon == null){
-			detectorDaemon = new RegionDetectorDaemon(name, hostIP, threshold);
-			detectorDaemon.start();
+//			detectorDaemon = new RegionDetectorDaemon(name, hostIP, threshold);
+//			detectorDaemon.start();
 		//}
+			
+		client = new CapitalizeClient(name);
+		client.connectToServer(hostIP);
 			
 		//}else{
 		//	client.resumePlay();
@@ -202,101 +212,102 @@ public class MainController {
 	@RequestMapping("/disconnectToServer.do")
     public @ResponseBody String disconnectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		log("disconnect to server");
-		detectorDaemon.stopWorking();
-		detectorDaemon.stop();
+		client.disconnectToServer();
+		//detectorDaemon.stopWorking();
+		//detectorDaemon.stop();
 		
 		return "success";
     }
 	
-	public class RegionDetectorDaemon extends Thread {
-		CapitalizeClient client;
-		String clientName;
-		String hostIP;
-		int threshold;
-		boolean play;
-
-		public String getClientName() {
-			return clientName;
-		}
-
-		public void setClientName(String clientName) {
-			this.clientName = clientName;
-		}
-
-		public String getHostIP() {
-			return hostIP;
-		}
-
-		public void setHostIP(String hostIP) {
-			this.hostIP = hostIP;
-		}
-
-		public boolean isPlay(){
-			if(client == null)
-				return false;
-			else return play;
-		}
-		
-		public RegionDetectorDaemon(String name, String hostIP, int threshold){
-			this.clientName = name;
-			this.hostIP = hostIP;
-			this.threshold = threshold;
-		}
-		
-		public void stopWorking(){
-			if(client != null){
-				client.disconnectToServer();
-				play = false;
-			}
-		}
-		
-		@Override
-		public void run() {
-			//System.out.println("Detector run!!");
-			// TODO Auto-generated method stub
-			boolean isPlayed = false;
-			while(true){
-				int signal = WifiDetector.getSignal();
-				
-				System.out.println("Current signal :"+signal+", threshold:"+threshold);
-				
-				if(signal > threshold || signal == WifiDetector.SIGNAL_INIT){
-					if(!isPlayed){
-						try {
-							if(client == null){
-								client = new CapitalizeClient(clientName);
-								client.connectToServer(hostIP);
-								play = true;
-							}
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						isPlayed = true;
-					}else{
-						//Do nothing.
-					}
-				}else{
-					if (client != null){
-						client.disconnectToServer();
-						play = false;
-						client = null;
-					}
-					isPlayed = false;
-				}
-				
-				try {
-					Thread.sleep(300);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-	}
+//	public class RegionDetectorDaemon extends Thread {
+//		CapitalizeClient client;
+//		String clientName;
+//		String hostIP;
+//		int threshold;
+//		boolean play;
+//
+//		public String getClientName() {
+//			return clientName;
+//		}
+//
+//		public void setClientName(String clientName) {
+//			this.clientName = clientName;
+//		}
+//
+//		public String getHostIP() {
+//			return hostIP;
+//		}
+//
+//		public void setHostIP(String hostIP) {
+//			this.hostIP = hostIP;
+//		}
+//
+//		public boolean isPlay(){
+//			if(client == null)
+//				return false;
+//			else return play;
+//		}
+//		
+//		public RegionDetectorDaemon(String name, String hostIP, int threshold){
+//			this.clientName = name;
+//			this.hostIP = hostIP;
+//			this.threshold = threshold;
+//		}
+//		
+//		public void stopWorking(){
+//			if(client != null){
+//				client.disconnectToServer();
+//				play = false;
+//			}
+//		}
+//		
+//		@Override
+//		public void run() {
+//			//System.out.println("Detector run!!");
+//			// TODO Auto-generated method stub
+//			boolean isPlayed = false;
+//			while(true){
+//				int signal = WifiDetector.getSignal();
+//				
+//				System.out.println("Current signal :"+signal+", threshold:"+threshold);
+//				
+//				if(signal > threshold || signal == WifiDetector.SIGNAL_INIT){
+//					if(!isPlayed){
+//						try {
+//							if(client == null){
+//								client = new CapitalizeClient(clientName);
+//								client.connectToServer(hostIP);
+//								play = true;
+//							}
+//						} catch (IOException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						} catch (InterruptedException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
+//						isPlayed = true;
+//					}else{
+//						//Do nothing.
+//					}
+//				}else{
+//					if (client != null){
+//						client.disconnectToServer();
+//						play = false;
+//						client = null;
+//					}
+//					isPlayed = false;
+//				}
+//				
+//				try {
+//					Thread.sleep(300);
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			}
+//		}
+//	}
 	
 	private static void log(String message) {
 		System.out.println("[Controller] "+message);

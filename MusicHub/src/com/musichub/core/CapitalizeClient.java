@@ -4,8 +4,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
+import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -28,6 +31,30 @@ public class CapitalizeClient {
 	String serverAddress = "";
 	
 	
+	public String getClientName() {
+		return clientName;
+	}
+
+	public void setClientName(String clientName) {
+		this.clientName = clientName;
+	}
+
+	public void setPlay(boolean play) {
+		this.play = play;
+	}
+
+	public void setConnected(boolean connected) {
+		this.connected = connected;
+	}
+
+	public String getServerAddress() {
+		return serverAddress;
+	}
+
+	public void setServerAddress(String serverAddress) {
+		this.serverAddress = serverAddress;
+	}
+
 	public CapitalizeClient(String clientName) {
 		this();
 		this.clientName = clientName;
@@ -61,10 +88,18 @@ public class CapitalizeClient {
 		
 		SourceDataLine sourceDataLine = null;
 		long packetDuration = 0;
+		int threshold;
+		static int SIGNAL_SIZE = 10;
+		List<Integer> signalList;
+		int nextPointer = 0;
 		
-		public PlayDaemon(SourceDataLine sourceDataLine, long packetDuration){
+		public PlayDaemon(SourceDataLine sourceDataLine, long packetDuration, int threshold){
 			this.sourceDataLine = sourceDataLine;
 			this.packetDuration = packetDuration;
+			this.threshold = threshold;
+			signalList = new ArrayList<Integer>(SIGNAL_SIZE);
+			for(int i = 0 ; i <SIGNAL_SIZE ; i++)
+				signalList.add(0);
 		}
 		
 		@Override
@@ -106,11 +141,40 @@ public class CapitalizeClient {
 				}
 				
 				long beforeTime = timeLookup.getCurrentTime();
-				sourceDataLine.write(curPacket.packet, 0, curPacket.length);
+				//System.out.println("threshold : "+threshold+", signal:"+WifiDetector.getSignal());
+				int newSignal = WifiDetector.getSignal();
+				float meanSignal = signalMean(newSignal);
+//				System.out.println("1newSignal: "+newSignal);
+//				System.out.println("meanSignal: "+meanSignal);
+//				System.out.println("signalList:"+signalList);
+				
+				
+				if(this.threshold <= meanSignal || newSignal == WifiDetector.SIGNAL_INIT ){
+					sourceDataLine.write(curPacket.packet, 0, curPacket.length);
+				}else{
+					//System.out.println("Signal low.. pass packet");
+					//Do nothing!.
+				}
 				long afterTime = timeLookup.getCurrentTime();
 				residual = packetDuration - (afterTime - beforeTime);
 				log("time gap : "+((afterTime-beforeTime)/(float)1000));
 			}
+		}
+		
+		private float signalMean(int newSignal){
+			int meanSignal = 0;
+			signalList.set(nextPointer, newSignal);
+			nextPointer++;
+			if(nextPointer == SIGNAL_SIZE) nextPointer = 0;
+			
+			int counted = 0;
+			for(int i = 0 ; i < signalList.size(); i++){
+				if(signalList.get(i) != 0){
+					meanSignal += signalList.get(i);
+					counted++;
+				}
+			}
+			return meanSignal / (float)counted;
 		}
 		
 	}
@@ -119,6 +183,7 @@ public class CapitalizeClient {
 
 		Socket socket = null;
 		DataInputStream in = null;
+		DataOutputStream out = null;
 		SourceDataLine sourceDataLine = null;
 		int bufferedCycle = 0;
 		
@@ -132,24 +197,27 @@ public class CapitalizeClient {
 		long packetDuration;
 		long severTime;
 		String clientName;
+		int threshold;
 
 		public ReceiveDaemon(Socket socket, String clientName, DataInputStream in, DataOutputStream out, int bufferedCycle) {
 			this.socket = socket;
 			this.in = in;
+			this.out = out;
 			this.bufferedCycle = bufferedCycle;
 			
 			try {			
 				if(!isInit){
-					System.out.println("client send name");
-					//out.writeChars(clientName);
+					
 					out.writeUTF(clientName);
-					System.out.println("client send name end");
+					out.writeInt(WifiDetector.getSignal());
+					
 					sampleRate = in.readFloat();
 					bits = in.readInt();
 					channels = in.readInt();
 					isBigEndian = in.readBoolean();
 					packetDuration = in.readLong();
 					severTime = in.readLong();
+					threshold = in.readInt();
 					timeLookup = new TimeLookup(severTime);
 					isInit = true;
 				}
@@ -160,7 +228,7 @@ public class CapitalizeClient {
 				sourceDataLine = (SourceDataLine) AudioSystem.getLine(info);
 				sourceDataLine.open(audioFormat2);
 				sourceDataLine.start();
-				playDaemon = new PlayDaemon(sourceDataLine, packetDuration);
+				playDaemon = new PlayDaemon(sourceDataLine, packetDuration, threshold);
 			} catch(IOException e){
 				e.printStackTrace();
 				return;
@@ -189,6 +257,8 @@ public class CapitalizeClient {
 					    byte[] message2 = new byte[byteRead];
 					    //log("receive length!! : "+length);
 					    in.readFully(message, 0, length); // read the message
+					    out.writeInt(WifiDetector.getSignal());
+					    
 					    System.arraycopy(message, 0, message2, 0, byteRead);
 					    
 					    packets.add(new AudioPacket(byteRead, message2, playTime));
@@ -293,15 +363,24 @@ public class CapitalizeClient {
 	
 
 	public static void main(String[] args) throws Exception {
-		log("I am client");
-		// TODO Auto-generated method stub
-		CapitalizeClient client = new CapitalizeClient();
-		String serverIP = "";
-		if (args.length < 3)
-			serverIP = "localhost";
-		else serverIP = args[3];
 		
-		client.connectToServer(serverIP);
+		List<Integer> a = new ArrayList<Integer>(3);
+		a.add(0);
+		a.add(0);
+		a.add(0);
+		
+		a.add(1, 10);
+		System.out.println(a);
+		System.out.println(10%3);
+//		log("I am client");
+//		// TODO Auto-generated method stub
+//		CapitalizeClient client = new CapitalizeClient();
+//		String serverIP = "";
+//		if (args.length < 3)
+//			serverIP = "localhost";
+//		else serverIP = args[3];
+//		
+//		client.connectToServer(serverIP);
 	}
 	
 	private static void log(String message) {

@@ -10,20 +10,47 @@ public class Client {
 	private Socket sockets;
 	private DataInputStream in;
 	private DataOutputStream out;
+	
 	private boolean init;
 	private boolean alive;
 	private boolean play;
+	private int signal;
+	private String signalStr;
 	
-	public Client(Socket socket, String clientName, DataInputStream in, DataOutputStream out, boolean init, boolean alive){
+	public Client(Socket socket, String clientName, DataInputStream in, DataOutputStream out, boolean init, boolean alive, int signal){
 		this.sockets = socket;
 		this.name = clientName;
 		this.in = in;
 		this.out = out;
 		this.init = init;
 		this.alive = alive;
+		setSignal(signal);
+		
+	}
+	
+	public int getSignal() {
+		return signal;
+	}
+
+	public void setSignal(int signal) {
+		this.signal = signal;
+		if(this.signal != WifiDetector.SIGNAL_INIT)
+			this.signalStr = Integer.toString(signal);
+		else
+			this.signalStr = "NOT WIFI";
 	}
 	
 	
+
+
+
+	public String getSignalStr() {
+		return signalStr;
+	}
+
+	public void setSignalStr(String signalStr) {
+		this.signalStr = signalStr;
+	}
 
 	public String getName() {
 		return name;

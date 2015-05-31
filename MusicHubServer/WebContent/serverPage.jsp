@@ -106,15 +106,15 @@
 	        
             
             <label for="name"">Turn on signal threshold: </label>
-	         <input type="range" name="slider-1" id="id_turn_on_threshold" value="-45" min="-100" max="0" />
+	         <input type="range" name="slider-1" id="id_turn_on_threshold" value="${threshold}" min="-100" max="0" />
             <div data-role="fieldcontain">
 				<label for="slider2">Lazy Play:</label>
 				<select name="slider2" id="id_islazy" data-role="slider">
-					<option value="off">Off</option>
-					<option value="on">On</option>
+					<option value="off" ${isLazy == "off" ? "selected=\"selected\"" : "" }>Off</option>
+					<option value="on" ${isLazy == "on" ? "selected=\"selected\"" : "" }>On</option>
 				</select>
 			</div>
-			<div data-role="fieldcontain" id="id_lazy_ppl_field" style="display:none">
+			<div data-role="fieldcontain" id="id_lazy_ppl_field" ${isLazy == "on" ? "" : "style=\"display:none\"" }>
 			<label for="slider2">Lazy ppl num:</label>
 			<input type="text" name="name" id="id_lazy_num" value="2"  />
 			</div>
@@ -141,7 +141,7 @@
 			    	<img src="AudioLevelSpectrum.gif">
 			    	<h2>${client.name}</h2>
 			    	<p>${client.sockets }</p> 
-			    <span class="ui-li-count">12</span></a></li>
+			    <span class="ui-li-count">${client.signalStr}</span></a></li>
 			</c:forEach>
 			</ul>
 			

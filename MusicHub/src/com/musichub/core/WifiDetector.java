@@ -45,7 +45,7 @@ public class WifiDetector extends Thread {
 				}	
 			}
 		}catch(Exception e){
-			System.err.println("THIS MACHINE IS NOT A LINUX");
+			//System.err.println("THIS MACHINE IS NOT A LINUX");
 		}
 		return signal;
 	}

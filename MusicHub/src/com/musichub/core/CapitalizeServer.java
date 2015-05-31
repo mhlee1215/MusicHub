@@ -18,6 +18,8 @@ import java.util.List;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.xml.bind.DatatypeConverter;
 
@@ -32,6 +34,31 @@ public class CapitalizeServer {
 	int lazyNum = 0;
 	int threshold = 0;
 	
+	
+	public boolean isLazy() {
+		return isLazy;
+	}
+
+	public void setLazy(boolean isLazy) {
+		this.isLazy = isLazy;
+	}
+
+	public int getLazyNum() {
+		return lazyNum;
+	}
+
+	public void setLazyNum(int lazyNum) {
+		this.lazyNum = lazyNum;
+	}
+
+	public int getThreshold() {
+		return threshold;
+	}
+
+	public void setThreshold(int threshold) {
+		this.threshold = threshold;
+	}
+
 	public boolean isStart() {
 		return start;
 	}
@@ -51,7 +78,7 @@ public class CapitalizeServer {
 		
 		timeLookup = new TimeLookup();
 		//if(listeningDaemon == null)
-		listeningDaemon = new ListeningDaemon();
+		//listeningDaemon = new ListeningDaemon();
 		start = false;
 		listener = new ServerSocket(9898);
 	}
@@ -59,7 +86,7 @@ public class CapitalizeServer {
 	public void startServer() throws Exception{
 		if(start == false){
 			log("The capitalization server is running.");
-			listeningDaemon = new ListeningDaemon();
+			listeningDaemon = new ListeningDaemon(threshold);
 			listeningDaemon.start();
 			start = true;
 		}
@@ -69,6 +96,7 @@ public class CapitalizeServer {
 		if(start == true){
 			log("The capitalization server is stopped.");
 			listeningDaemon.stop();
+			listener.close();
 			start = false;
 		}
 	}
@@ -76,20 +104,23 @@ public class CapitalizeServer {
 	
 	
 	public static class ListeningDaemon extends Thread {
+		int threshold;
+		public ListeningDaemon(int threshold){
+			this.threshold = threshold;
+		}
+		
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
 			int clientNumber = 0;
-			
-			try {
 				
-			
+			try {
 				server = new Capitalizer();
 				try {
 	
 					while (true) {
 						log("Waiting.. next is " + clientNumber);
-						server.addListener(listener.accept(), clientNumber++);
+						server.addListener(listener.accept(), clientNumber++, threshold);
 						if (clientNumber == 1) {
 							server.start();
 						}
@@ -212,7 +243,7 @@ public class CapitalizeServer {
 		// log("New connection with client# " + clientNumber + " at " + socket);
 		// }
 
-		public void addListener(Socket socket, int clientNumber) {
+		public void addListener(Socket socket, int clientNumber, int threshold) {
 			
 			log("New connection with client# " + clientNumber + " at " + socket);
 
@@ -241,6 +272,7 @@ public class CapitalizeServer {
 				
 				System.out.println("Server receive name");
 				String clientName = in.readUTF();
+				int signal = in.readInt();
 				System.out.println("Server receive name end");
 				out.writeFloat(audioFormat.getSampleRate());
 				out.writeInt(audioFormat.getSampleSizeInBits());
@@ -248,9 +280,11 @@ public class CapitalizeServer {
 				out.writeBoolean(audioFormat.isBigEndian());
 				out.writeLong((long) (1000 * packetSecLength));
 				out.writeLong(timeLookup.getCurrentTime());
+				out.writeInt(threshold);
 				
 				
-				clients.add(clientNumber, new Client(socket, clientName, in, out, false, true));
+				clients.add(clientNumber, new Client(socket, clientName, in, out, false, true, signal));
+				
 				
 				//isInit.set(clientNumber, true);
 				
@@ -311,10 +345,20 @@ public class CapitalizeServer {
 				// Socket socket = sockets.get(clientNumber);
 				// BufferedReader in = ins.get(clientNumber);
 				DataOutputStream out = clients.get(clientNumber).getOut();
+				DataInputStream in = clients.get(clientNumber).getIn();
 
 				try {
 					out.write(data);
 				} catch (IOException e) {
+					log("Error handling client# " + clientNumber + ": " + e);
+					clients.get(clientNumber).setAlive(false);
+				}
+				
+				try {
+					int signal = in.readInt();
+					clients.get(clientNumber).setSignal(signal);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
 					log("Error handling client# " + clientNumber + ": " + e);
 					clients.get(clientNumber).setAlive(false);
 				}
@@ -368,7 +412,16 @@ public class CapitalizeServer {
 										bytesReadAll, bytesRead);
 								bytesReadAll += bytesRead;
 							}else{
-								audioInputStream.reset();
+								//audioInputStream.reset();
+								try {
+									Clip clip = AudioSystem.getClip();
+									clip.open(audioInputStream);
+									clip.setFramePosition(0);
+								} catch (LineUnavailableException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								};
+								
 								continue;
 							}
 						}

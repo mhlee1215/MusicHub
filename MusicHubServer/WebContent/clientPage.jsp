@@ -41,13 +41,13 @@
         	isConnected = true;
         	var clientName = $.trim($("#id_name").val());
             var hostIP = $.trim($("#id_host_ip").val());
-            var threshold = $("#id_turn_on_threshold").val(); 
+         
             if(hostIP.length > 0)
             {
                 $.ajax({
                   type: "POST",
                   url: "connectToServer.do",
-                  data: ({hostIP: hostIP, threshold:threshold, clientName:clientName}),
+                  data: ({hostIP: hostIP, clientName:clientName}),
                   cache: false,
                   dataType: "text",
                   success: onConnectSuccess
@@ -111,8 +111,6 @@
         	
 	         <label for="name"">Host IP Address (For Listening): </label>
 	         <input type="text" name="name" id="id_host_ip" value="${ip}"  />
-	         <label for="name"">Turn on signal threshold: </label>
-	         <input type="range" name="slider-1" id="id_turn_on_threshold" value="-45" min="-100" max="0" />
 	         
 	         <c:choose>
 		      <c:when test="${isPlay==true}">
