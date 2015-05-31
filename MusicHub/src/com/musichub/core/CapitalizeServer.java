@@ -2,6 +2,7 @@ package com.musichub.core;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,10 +28,30 @@ public class CapitalizeServer {
 	private boolean start;
 	private static ServerSocket listener;
 	
+	boolean isLazy = false;
+	int lazyNum = 0;
+	int threshold = 0;
+	
+	public boolean isStart() {
+		return start;
+	}
+
+	public void setStart(boolean start) {
+		this.start = start;
+	}
+
 	public CapitalizeServer() throws Exception {
+		this(false,  0, -45);
+	}
+	
+	public CapitalizeServer(boolean isLazy, int lazyNum, int threshold) throws Exception {
+		this.isLazy = isLazy;
+		this.lazyNum = lazyNum;
+		this.threshold = threshold;
+		
 		timeLookup = new TimeLookup();
-		if(listeningDaemon == null)
-			listeningDaemon = new ListeningDaemon();
+		//if(listeningDaemon == null)
+		listeningDaemon = new ListeningDaemon();
 		start = false;
 		listener = new ServerSocket(9898);
 	}
@@ -38,6 +59,7 @@ public class CapitalizeServer {
 	public void startServer() throws Exception{
 		if(start == false){
 			log("The capitalization server is running.");
+			listeningDaemon = new ListeningDaemon();
 			listeningDaemon.start();
 			start = true;
 		}
@@ -143,9 +165,11 @@ public class CapitalizeServer {
 				System.err.println("Fail to load online file.");
 				try {
 					FileInputStream fstream = new FileInputStream(wavFile);
+					
 					audioInputStream = AudioSystem
 							.getAudioInputStream(new BufferedInputStream(
 									fstream));
+					
 				} catch (UnsupportedAudioFileException e) {
 					e.printStackTrace();
 					return;
@@ -193,13 +217,14 @@ public class CapitalizeServer {
 			log("New connection with client# " + clientNumber + " at " + socket);
 
 			try {
-				BufferedReader in = new BufferedReader(new InputStreamReader(
-						socket.getInputStream()));
+				//BufferedReader in = new BufferedReader(new InputStreamReader(
+				//		socket.getInputStream()));
+				
+				DataInputStream in = new DataInputStream(socket.getInputStream());
 				
 				DataOutputStream out = new DataOutputStream(
 						socket.getOutputStream());
 				
-				clients.add(clientNumber, new Client(socket, in, out, false, true));
 				
 //				sockets.add(clientNumber, socket);	
 //				ins.add(in);
@@ -214,12 +239,18 @@ public class CapitalizeServer {
 				log("(long) (1000 * packetSecLength):"+(long) (1000 * packetSecLength));
 				log("timeLookup.getCurrentTime():"+timeLookup.getCurrentTime());
 				
+				System.out.println("Server receive name");
+				String clientName = in.readUTF();
+				System.out.println("Server receive name end");
 				out.writeFloat(audioFormat.getSampleRate());
 				out.writeInt(audioFormat.getSampleSizeInBits());
 				out.writeInt(audioFormat.getChannels());
 				out.writeBoolean(audioFormat.isBigEndian());
 				out.writeLong((long) (1000 * packetSecLength));
 				out.writeLong(timeLookup.getCurrentTime());
+				
+				
+				clients.add(clientNumber, new Client(socket, clientName, in, out, false, true));
 				
 				//isInit.set(clientNumber, true);
 				
@@ -336,6 +367,9 @@ public class CapitalizeServer {
 								System.arraycopy(dataBuffer, 0, dataBufferLarge,
 										bytesReadAll, bytesRead);
 								bytesReadAll += bytesRead;
+							}else{
+								audioInputStream.reset();
+								continue;
 							}
 						}
 
@@ -436,7 +470,7 @@ public class CapitalizeServer {
 	}
 	
 	private static void log(String message) {
-		System.out.println("[SERVER] "+message);
+		//System.out.println("[SERVER] "+message);
 	}
 
 }

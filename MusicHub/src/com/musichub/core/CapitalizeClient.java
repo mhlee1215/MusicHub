@@ -1,5 +1,6 @@
 package com.musichub.core;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
@@ -14,19 +15,47 @@ import javax.sound.sampled.SourceDataLine;
 
 public class CapitalizeClient {
 
+	
 	DataInputStream in = null;//new DataInputStream(socket.getInputStream());
+	DataOutputStream out = null;
 	ReceiveDaemon receiveDaemon = null;
 	static PlayDaemon playDaemon = null;
 	static Queue<AudioPacket> packets = null;
 	static TimeLookup timeLookup = null;
-
+	boolean play;
+	boolean connected;
+	String clientName = "";
+	String serverAddress = "";
+	
+	
+	public CapitalizeClient(String clientName) {
+		this();
+		this.clientName = clientName;
+		
+		//timeLookup = new TimeLookup();
+	}
 	
 	public CapitalizeClient() {
+		play = false;
+		connected = false;
 		packets = new LinkedList<AudioPacket>();
 		//timeLookup = new TimeLookup();
 	}
+	
+	
 
 	
+	public boolean isPlay() {
+		return play;
+	}
+
+	public boolean isConnected() {
+		return connected;
+	}
+
+
+
+
 	public static class PlayDaemon extends Thread {
 		
 		
@@ -42,13 +71,23 @@ public class CapitalizeClient {
 		public void run() {
 			// TODO Auto-generated method stub
 			long residual = 0;
-			while(packets.size() > 0){
-				System.out.println("packets.size() :"+packets.size());
+			while(true){
+				if (packets.size() == 0){
+					try {
+						Thread.sleep(1000);
+						continue;
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						//e.printStackTrace();
+						log("No packet to play.. wait..");
+					}
+				}
+				log("packets.size() :"+packets.size());
 				
 				AudioPacket curPacket = packets.poll();
-				//System.out.println(curPacket.toString());
+				//log(curPacket.toString());
 				long curTime = timeLookup.getCurrentTime();
-				System.out.println("curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
+				log("curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
 				//If current time is already passed, just trow away packet
 				if (curPacket.playTime < curTime){
 					continue;
@@ -57,7 +96,7 @@ public class CapitalizeClient {
 				else{
 					try {
 						long sleepTime = curPacket.playTime - curTime - residual;
-						System.out.println("sleep : "+sleepTime);
+						log("sleep : "+sleepTime);
 						if(sleepTime > 0)
 							sleep(sleepTime);
 					} catch (InterruptedException e) {
@@ -70,7 +109,7 @@ public class CapitalizeClient {
 				sourceDataLine.write(curPacket.packet, 0, curPacket.length);
 				long afterTime = timeLookup.getCurrentTime();
 				residual = packetDuration - (afterTime - beforeTime);
-				System.out.println("time gap : "+((afterTime-beforeTime)/(float)1000));
+				log("time gap : "+((afterTime-beforeTime)/(float)1000));
 			}
 		}
 		
@@ -92,14 +131,19 @@ public class CapitalizeClient {
 		boolean isBigEndian;
 		long packetDuration;
 		long severTime;
+		String clientName;
 
-		public ReceiveDaemon(Socket socket, DataInputStream in, int bufferedCycle) {
+		public ReceiveDaemon(Socket socket, String clientName, DataInputStream in, DataOutputStream out, int bufferedCycle) {
 			this.socket = socket;
 			this.in = in;
 			this.bufferedCycle = bufferedCycle;
 			
 			try {			
 				if(!isInit){
+					System.out.println("client send name");
+					//out.writeChars(clientName);
+					out.writeUTF(clientName);
+					System.out.println("client send name end");
 					sampleRate = in.readFloat();
 					bits = in.readInt();
 					channels = in.readInt();
@@ -111,7 +155,7 @@ public class CapitalizeClient {
 				}
 				
 				AudioFormat audioFormat2 = new AudioFormat(sampleRate, bits, channels, true, isBigEndian);
-				System.out.println(audioFormat2.toString());
+				log(audioFormat2.toString());
 				DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat2);
 				sourceDataLine = (SourceDataLine) AudioSystem.getLine(info);
 				sourceDataLine.open(audioFormat2);
@@ -138,12 +182,12 @@ public class CapitalizeClient {
 					int byteRead = in.readInt();
 					int length = in.readInt();
 				
-					//System.out.println("byteRead:"+byteRead+", length:"+length);
+					//log("byteRead:"+byteRead+", length:"+length);
 					if(length>0) {
 						long playTime = in.readLong();
 					    byte[] message = new byte[length];
 					    byte[] message2 = new byte[byteRead];
-					    //System.out.println("receive length!! : "+length);
+					    //log("receive length!! : "+length);
 					    in.readFully(message, 0, length); // read the message
 					    System.arraycopy(message, 0, message2, 0, byteRead);
 					    
@@ -151,12 +195,12 @@ public class CapitalizeClient {
 					    
 					    if(!playDaemon.isAlive()){
 					    	if(packets.size() > bufferedCycle){
-					    		System.out.println("Play Daemon started..");
+					    		log("Play Daemon started..");
 					    		playDaemon.start();
 					    	}
 					    }
 					}else{
-						System.out.println("Receive End");
+						log("Receive End");
 						if(!playDaemon.isAlive()){
 					    	playDaemon.start();
 					    }
@@ -186,35 +230,70 @@ public class CapitalizeClient {
 
 
 	public void connectToServer(String serverAddress) throws IOException, InterruptedException {
+		this.serverAddress = serverAddress;
+		log("connectToServer:"+serverAddress);
 		int timeGapBetweenFail = 1000;
 		while (true) {
 			try {
-				System.out.println("Trying to connect server..");
+				log("Trying to connect server..");
 				Socket socket = new Socket(serverAddress, 9898);
-				System.out.println("Trying to get inputstream..");
+				log("Trying to get inputstream..");
 				in = new DataInputStream(socket.getInputStream());
-				if (receiveDaemon == null)
-					receiveDaemon = new ReceiveDaemon(socket, in, 10);
-				//receiveDaemon.setDaemon(true);
-				System.out.println("Receive Daemon started..");
-				receiveDaemon.start();
+				out = new DataOutputStream(socket.getOutputStream());
+				connected = true;
+				play(socket, in, out);
 				break;
 			} catch (ConnectException e) {
 				System.err.println("Connection Fail.. try again after "+timeGapBetweenFail+"ms");
+				connected = false;
 				//e.printStackTrace();
 				Thread.sleep(timeGapBetweenFail);
 			}
 		}
 	}
 	
-	public void disconnectToServer(){
+	public void play(Socket socket, DataInputStream in, DataOutputStream out){
+		if (receiveDaemon == null)
+			receiveDaemon = new ReceiveDaemon(socket, clientName, in, out, 10);
+		//receiveDaemon.setDaemon(true);
+		log("Receive Daemon started..");
+		receiveDaemon.start();
+		play = true;
+	}
+	
+//	public synchronized void resumePlay(){
+//		log("resumePlay");
+//		//receiveDaemon.notify();
+//		//playDaemon.notify();
+//		playDaemon.start();
+//	}
+	
+	public synchronized void disconnectToServer(){
+		log("disconnectToServer");
 		receiveDaemon.stop();
 		playDaemon.stop();
+		try {
+			receiveDaemon.socket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		play = false;
+		connected = false;
+		
+//		try {
+//			receiveDaemon.wait();
+//			playDaemon.wait();
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		
 	}
 	
 
 	public static void main(String[] args) throws Exception {
-		System.out.println("I am client");
+		log("I am client");
 		// TODO Auto-generated method stub
 		CapitalizeClient client = new CapitalizeClient();
 		String serverIP = "";
@@ -223,6 +302,10 @@ public class CapitalizeClient {
 		else serverIP = args[3];
 		
 		client.connectToServer(serverIP);
+	}
+	
+	private static void log(String message) {
+		//System.out.println("[CLIENT] "+message);
 	}
 
 }

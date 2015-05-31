@@ -6,7 +6,7 @@
 
 			<div class="jqm-footer">
 				<p class="jqm-version"></p>
-				<p>&copy; 2010, 2013 jQuery Foundation and other contributors</p>
+				<p>&copy; 2015, MusicHub Developing Team</p>
 			</div><!-- /jqm-footer -->
 			
 			

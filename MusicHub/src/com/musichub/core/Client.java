@@ -1,19 +1,22 @@
 package com.musichub.core;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
 
 public class Client {
 	private String name;
 	private Socket sockets;
-	private BufferedReader in;
+	private DataInputStream in;
 	private DataOutputStream out;
 	private boolean init;
 	private boolean alive;
+	private boolean play;
 	
-	public Client(Socket socket, BufferedReader in, DataOutputStream out, boolean init, boolean alive){
+	public Client(Socket socket, String clientName, DataInputStream in, DataOutputStream out, boolean init, boolean alive){
 		this.sockets = socket;
+		this.name = clientName;
 		this.in = in;
 		this.out = out;
 		this.init = init;
@@ -38,11 +41,11 @@ public class Client {
 		this.sockets = sockets;
 	}
 
-	public BufferedReader getIn() {
+	public DataInputStream getIn() {
 		return in;
 	}
 
-	public void setIn(BufferedReader in) {
+	public void setIn(DataInputStream in) {
 		this.in = in;
 	}
 
@@ -70,5 +73,21 @@ public class Client {
 		this.alive = alive;
 	}
 
-	
+	public boolean isPlay() {
+		return play;
+	}
+
+	public void setPlay(boolean play) {
+		this.play = play;
+	}
+
+
+
+	@Override
+	public String toString() {
+		return "{\"name\":\"" + name + "\", sockets\":\"" + sockets
+				+ "\", in\":\"" + in + "\", out\":\"" + out + "\", init\":\""
+				+ init + "\", alive\":\"" + alive + "\", play\":\"" + play
+				+ "}";
+	}
 }

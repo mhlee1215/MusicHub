@@ -77,6 +77,13 @@ public class MainController {
 		model.addObject("myIP", myIP);
 		model.addObject("wifi_signal", wifi_signal);
 		
+
+		if (detectorDaemon != null){
+			model.addObject("isPlay", detectorDaemon.isPlay());
+			model.addObject("ip", detectorDaemon.getHostIP());
+			model.addObject("name", detectorDaemon.getClientName());
+		}
+		
 				
 		return model;
     }
@@ -88,6 +95,12 @@ public class MainController {
 		
 		ModelAndView model = new ModelAndView("serverPage");
 		model.addObject("myIP", myIP);
+		
+		if (server != null){
+			model.addObject("isPlay", server.isStart());
+			model.addObject("clients", server.getClients());
+			
+		}
 				
 		return model;
     }
@@ -106,10 +119,20 @@ public class MainController {
     public @ResponseBody String startServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
 		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
-		System.out.println("start Server! :"+hostIP);
+		String isLazyStr = ServletRequestUtils.getStringParameter(request, "isLazy", "off");
+		int lazyNum = ServletRequestUtils.getIntParameter(request, "lazyNum", 0);
+		int threshold = ServletRequestUtils.getIntParameter(request, "threshold", -45);
+
+		boolean isLazy = false;
+		
+		if(isLazyStr.equals("on")) isLazy = true;
+		
+		//{isLazy:islazy, lazyNum:lazyNum, threshold:threshold}),
+		//log("start Server! :"+hostIP);
+		
 		
 		if (server == null){
-			server = new CapitalizeServer();
+			server = new CapitalizeServer(isLazy, lazyNum, threshold);
 		}
 		//System.out.println("start?");
 		server.startServer();
@@ -119,7 +142,7 @@ public class MainController {
 	
 	@RequestMapping("/stopServer.do")
     public @ResponseBody String stopServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
+		log("stop server");
 //		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
 //		System.out.println("connect to Server! :"+hostIP);
 //		
@@ -136,14 +159,15 @@ public class MainController {
 	@RequestMapping("/connectToServer.do")
     public @ResponseBody String connectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
+		String name = ServletRequestUtils.getStringParameter(request, "clientName", "loalhost");
 		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
 		int threshold = ServletRequestUtils.getIntParameter(request, "threshold", -45);
-		System.out.println("connect to Server!!! :"+hostIP);
+		log("connect to Server!!! :"+hostIP+", "+name+", threshold:"+threshold);
 		
 		//if (client == null){
 			
 		//if (detectorDaemon == null){
-			detectorDaemon = new RegionDetectorDaemon(hostIP, threshold);
+			detectorDaemon = new RegionDetectorDaemon(name, hostIP, threshold);
 			detectorDaemon.start();
 		//}
 			
@@ -176,7 +200,8 @@ public class MainController {
 	
 	
 	@RequestMapping("/disconnectToServer.do")
-    public @ResponseBody String disconnectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {		
+    public @ResponseBody String disconnectToServer(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		log("disconnect to server");
 		detectorDaemon.stopWorking();
 		detectorDaemon.stop();
 		
@@ -185,17 +210,44 @@ public class MainController {
 	
 	public class RegionDetectorDaemon extends Thread {
 		CapitalizeClient client;
+		String clientName;
 		String hostIP;
 		int threshold;
+		boolean play;
+
+		public String getClientName() {
+			return clientName;
+		}
+
+		public void setClientName(String clientName) {
+			this.clientName = clientName;
+		}
+
+		public String getHostIP() {
+			return hostIP;
+		}
+
+		public void setHostIP(String hostIP) {
+			this.hostIP = hostIP;
+		}
+
+		public boolean isPlay(){
+			if(client == null)
+				return false;
+			else return play;
+		}
 		
-		public RegionDetectorDaemon(String hostIP, int threshold){
+		public RegionDetectorDaemon(String name, String hostIP, int threshold){
+			this.clientName = name;
 			this.hostIP = hostIP;
 			this.threshold = threshold;
 		}
 		
 		public void stopWorking(){
-			if(client != null)
+			if(client != null){
 				client.disconnectToServer();
+				play = false;
+			}
 		}
 		
 		@Override
@@ -212,8 +264,9 @@ public class MainController {
 					if(!isPlayed){
 						try {
 							if(client == null){
-								client = new CapitalizeClient();
+								client = new CapitalizeClient(clientName);
 								client.connectToServer(hostIP);
+								play = true;
 							}
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
@@ -229,6 +282,7 @@ public class MainController {
 				}else{
 					if (client != null){
 						client.disconnectToServer();
+						play = false;
 						client = null;
 					}
 					isPlayed = false;
@@ -242,5 +296,9 @@ public class MainController {
 				}
 			}
 		}
+	}
+	
+	private static void log(String message) {
+		System.out.println("[Controller] "+message);
 	}
 }
