@@ -106,7 +106,7 @@ public class MainController {
 		}else{
 			model.addObject("isLazy", "off");
 			model.addObject("lazyNum", 2);
-			model.addObject("threshold", -45);
+			model.addObject("threshold", -80);
 		}
 				
 		return model;
@@ -168,7 +168,7 @@ public class MainController {
 
 		String name = ServletRequestUtils.getStringParameter(request, "clientName", "loalhost");
 		String hostIP = ServletRequestUtils.getStringParameter(request, "hostIP", "loalhost");
-		//int threshold = ServletRequestUtils.getIntParameter(request, "threshold", -45);
+		int volume = ServletRequestUtils.getIntParameter(request, "volume", 50) ;
 		log("connect to Server!!! :"+hostIP+", "+name);
 		
 		//if (client == null){
@@ -180,6 +180,7 @@ public class MainController {
 			
 		client = new CapitalizeClient(name);
 		client.connectToServer(hostIP);
+		//client.setVolume(volume);
 			
 		//}else{
 		//	client.resumePlay();

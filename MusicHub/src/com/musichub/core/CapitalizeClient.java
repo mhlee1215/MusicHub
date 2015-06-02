@@ -12,7 +12,9 @@ import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Control;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
@@ -29,6 +31,8 @@ public class CapitalizeClient {
 	boolean connected;
 	String clientName = "";
 	String serverAddress = "";
+	
+	
 	
 	
 	public String getClientName() {
@@ -54,6 +58,35 @@ public class CapitalizeClient {
 	public void setServerAddress(String serverAddress) {
 		this.serverAddress = serverAddress;
 	}
+	
+	public void setVolume(int volume){
+		System.out.println("[[[[SET VOLUME :"+volume);
+		SourceDataLine line = playDaemon.getDataLine();
+		FloatControl control=(FloatControl)line.getControl(FloatControl.Type.MASTER_GAIN);
+		Control[] controls = line.getControls();
+		for(int i = 0 ; i < controls.length ; i++){
+			System.out.println(controls[i]);
+		}
+		float f_volume = ((float)volume);///100;
+		System.out.println("[[[[SET VOLUME :"+control.getMaximum());
+		
+		float gap = (control.getMaximum() - control.getMaximum())*f_volume;
+		float v = control.getMinimum()+gap;
+		
+		control.setValue(v);	
+	}
+	
+	public static void setVolume(float f_volume){
+		SourceDataLine line = playDaemon.getDataLine();
+		FloatControl control=(FloatControl)line.getControl(FloatControl.Type.MASTER_GAIN);
+		float gap = (control.getMaximum() - control.getMinimum())*f_volume;
+		float v = control.getMinimum()+gap;
+//		System.out.println("actual v:"+v);
+//		System.out.println("control.getMinimum():"+control.getMinimum());
+//		System.out.println("control.getMaximum():"+control.getMaximum());
+		
+		control.setValue(v);
+	}
 
 	public CapitalizeClient(String clientName) {
 		this();
@@ -66,6 +99,8 @@ public class CapitalizeClient {
 		play = false;
 		connected = false;
 		packets = new LinkedList<AudioPacket>();
+		
+		
 		//timeLookup = new TimeLookup();
 	}
 	
@@ -89,17 +124,22 @@ public class CapitalizeClient {
 		SourceDataLine sourceDataLine = null;
 		long packetDuration = 0;
 		int threshold;
-		static int SIGNAL_SIZE = 10;
-		List<Integer> signalList;
-		int nextPointer = 0;
+		SignalMeanClass signalMeanClass;
 		
 		public PlayDaemon(SourceDataLine sourceDataLine, long packetDuration, int threshold){
 			this.sourceDataLine = sourceDataLine;
+			
+			//sourceDataLine.getControl(FloatControl.Type.VOLUME);
+//			FloatControl control=(FloatControl)sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
+//			control.setValue((float) 1);		
+			
 			this.packetDuration = packetDuration;
 			this.threshold = threshold;
-			signalList = new ArrayList<Integer>(SIGNAL_SIZE);
-			for(int i = 0 ; i <SIGNAL_SIZE ; i++)
-				signalList.add(0);
+			signalMeanClass = new SignalMeanClass();
+		}
+		
+		public SourceDataLine getDataLine(){
+			return sourceDataLine;
 		}
 		
 		@Override
@@ -117,9 +157,11 @@ public class CapitalizeClient {
 						log("No packet to play.. wait..");
 					}
 				}
-				log("packets.size() :"+packets.size());
+				log("##packets.size() :"+packets.size());
 				
 				AudioPacket curPacket = packets.poll();
+//				sourceDataLine.write(curPacket.packet, 0, curPacket.length);
+//				if(1==1) continue;
 				//log(curPacket.toString());
 				long curTime = timeLookup.getCurrentTime();
 				log("curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
@@ -132,23 +174,40 @@ public class CapitalizeClient {
 					try {
 						long sleepTime = curPacket.playTime - curTime - residual;
 						log("sleep : "+sleepTime);
-						if(sleepTime > 0)
-							sleep(sleepTime);
-					} catch (InterruptedException e) {
+						log("residual : "+residual);
+						
+						curTime = timeLookup.getCurrentTime();
+						log("1curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
+						//if(sleepTime > 0)
+						//	sleep(0);
+						
+						curTime = timeLookup.getCurrentTime();
+						log("2curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
+					} 
+					catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
 				
-				long beforeTime = timeLookup.getCurrentTime();
+				
 				//System.out.println("threshold : "+threshold+", signal:"+WifiDetector.getSignal());
 				int newSignal = WifiDetector.getSignal();
-				float meanSignal = signalMean(newSignal);
+				float meanSignal = signalMeanClass.signalMean(newSignal);
+				
+				if(newSignal != WifiDetector.SIGNAL_INIT){
+					float v_ratio = Math.min(1, Math.max(0, meanSignal - threshold)/(float)40);
+					float v_ratio2 = (float)Math.pow(v_ratio, 0.5);
+					//System.out.println("v_ratio:"+v_ratio+", v_ratio2:"+v_ratio2);
+					setVolume(v_ratio2);
+				}
+				
 //				System.out.println("1newSignal: "+newSignal);
 //				System.out.println("meanSignal: "+meanSignal);
 //				System.out.println("signalList:"+signalList);
 				
 				
+				long beforeTime = timeLookup.getCurrentTime();
 				if(this.threshold <= meanSignal || newSignal == WifiDetector.SIGNAL_INIT ){
 					sourceDataLine.write(curPacket.packet, 0, curPacket.length);
 				}else{
@@ -157,16 +216,39 @@ public class CapitalizeClient {
 				}
 				long afterTime = timeLookup.getCurrentTime();
 				residual = packetDuration - (afterTime - beforeTime);
-				log("time gap : "+((afterTime-beforeTime)/(float)1000));
+				log("time gap : "+(afterTime-beforeTime));
+				log("residual : "+residual);
 			}
 		}
 		
-		private float signalMean(int newSignal){
-			int meanSignal = 0;
+		
+		
+	}
+	
+	
+	public static class SignalMeanClass {
+		int SIGNAL_SIZE = 5;
+		List<Integer> signalList;
+		int nextPointer = 0;
+		
+		public SignalMeanClass(){
+			signalList = new ArrayList<Integer>(SIGNAL_SIZE);
+			for(int i = 0 ; i <SIGNAL_SIZE ; i++)
+				signalList.add(0);
+		}
+		
+		
+		public float signalMean(int newSignal){
 			signalList.set(nextPointer, newSignal);
 			nextPointer++;
 			if(nextPointer == SIGNAL_SIZE) nextPointer = 0;
 			
+			return signalMean();
+		}
+		
+		public float signalMean(){
+			int meanSignal = 0;
+
 			int counted = 0;
 			for(int i = 0 ; i < signalList.size(); i++){
 				if(signalList.get(i) != 0){
@@ -176,8 +258,12 @@ public class CapitalizeClient {
 			}
 			return meanSignal / (float)counted;
 		}
-		
 	}
+	
+	
+	
+	
+	
 	
 	public static class ReceiveDaemon extends Thread {
 
@@ -186,6 +272,7 @@ public class CapitalizeClient {
 		DataOutputStream out = null;
 		SourceDataLine sourceDataLine = null;
 		int bufferedCycle = 0;
+		SignalMeanClass signalMeanClass;
 		
 		boolean isInit = false;
 		
@@ -198,12 +285,14 @@ public class CapitalizeClient {
 		long severTime;
 		String clientName;
 		int threshold;
+		int packetSize;
 
 		public ReceiveDaemon(Socket socket, String clientName, DataInputStream in, DataOutputStream out, int bufferedCycle) {
 			this.socket = socket;
 			this.in = in;
 			this.out = out;
 			this.bufferedCycle = bufferedCycle;
+			signalMeanClass = new SignalMeanClass();
 			
 			try {			
 				if(!isInit){
@@ -218,11 +307,13 @@ public class CapitalizeClient {
 					packetDuration = in.readLong();
 					severTime = in.readLong();
 					threshold = in.readInt();
+					packetSize = in.readInt();
 					timeLookup = new TimeLookup(severTime);
 					isInit = true;
 				}
 				
 				AudioFormat audioFormat2 = new AudioFormat(sampleRate, bits, channels, true, isBigEndian);
+				log("<<<<<<Audio Format!\n");
 				log(audioFormat2.toString());
 				DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat2);
 				sourceDataLine = (SourceDataLine) AudioSystem.getLine(info);
@@ -233,6 +324,17 @@ public class CapitalizeClient {
 				e.printStackTrace();
 				return;
 				
+			} catch(java.lang.IllegalArgumentException e){
+				e.printStackTrace();
+				if(sourceDataLine != null)
+					sourceDataLine.close();
+				try {
+					socket.close();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				return;
 			} catch (LineUnavailableException e) {
 			
 				e.printStackTrace();
@@ -245,21 +347,38 @@ public class CapitalizeClient {
 			
 			//int i = 0;
 			int errCount = 0;
+			byte[] message = null;//new byte[packetSize];//new byte[length];
+		    byte[] message2 = null;//new byte[packetSize];;//new byte[byteRead];
 			while (true) {
 				try {
 					int byteRead = in.readInt();
 					int length = in.readInt();
+					
+					
 				
-					//log("byteRead:"+byteRead+", length:"+length);
+					log("byteRead:"+byteRead+", length:"+length+", packetSize:"+packetSize);
+					
+					if(byteRead < 0 || length < 0 || byteRead > packetSize*10 || length > packetSize*10){ 
+						byteRead = 0;
+						length = 0;
+					}
 					if(length>0) {
 						long playTime = in.readLong();
-					    byte[] message = new byte[length];
-					    byte[] message2 = new byte[byteRead];
-					    //log("receive length!! : "+length);
-					    in.readFully(message, 0, length); // read the message
-					    out.writeInt(WifiDetector.getSignal());
 					    
-					    System.arraycopy(message, 0, message2, 0, byteRead);
+//						if(message == null || message.length < length)
+							message = new byte[packetSize];
+//						if(message2 == null || message2.length < byteRead)
+							message2 = new byte[packetSize];
+						
+					    //log("receive length!! : "+length);
+					    in.readFully(message, 0, packetSize); // read the message
+					    
+					    int newSignal = WifiDetector.getSignal();
+					    float meanSignal = signalMeanClass.signalMean(newSignal);
+					    out.writeInt(Math.round(meanSignal));
+					    
+					    
+					    System.arraycopy(message, 0, message2, 0, packetSize);
 					    
 					    packets.add(new AudioPacket(byteRead, message2, playTime));
 					    
@@ -270,16 +389,16 @@ public class CapitalizeClient {
 					    	}
 					    }
 					}else{
-						log("Receive End");
+						System.err.println("Receive error");
 						if(!playDaemon.isAlive()){
 					    	playDaemon.start();
 					    }
-						break;
+						//break;
 					}
 
 				} catch (Exception ex) {
 					//response = "Error: " + ex;
-					//ex.printStackTrace();
+					ex.printStackTrace();
 					System.err.println("Err to receive file");
 					errCount++;
 					if(errCount > 10){
@@ -340,8 +459,10 @@ public class CapitalizeClient {
 	
 	public synchronized void disconnectToServer(){
 		log("disconnectToServer");
-		receiveDaemon.stop();
-		playDaemon.stop();
+		if(receiveDaemon!=null)
+			receiveDaemon.stop();
+		if(playDaemon != null)
+			playDaemon.stop();
 		try {
 			receiveDaemon.socket.close();
 		} catch (IOException e) {
@@ -364,27 +485,19 @@ public class CapitalizeClient {
 
 	public static void main(String[] args) throws Exception {
 		
-		List<Integer> a = new ArrayList<Integer>(3);
-		a.add(0);
-		a.add(0);
-		a.add(0);
+		log("I am client");
+		// TODO Auto-generated method stub
+		CapitalizeClient client = new CapitalizeClient();
+		String serverIP = "";
+		if (args.length < 3)
+			serverIP = "localhost";
+		else serverIP = args[3];
 		
-		a.add(1, 10);
-		System.out.println(a);
-		System.out.println(10%3);
-//		log("I am client");
-//		// TODO Auto-generated method stub
-//		CapitalizeClient client = new CapitalizeClient();
-//		String serverIP = "";
-//		if (args.length < 3)
-//			serverIP = "localhost";
-//		else serverIP = args[3];
-//		
-//		client.connectToServer(serverIP);
+		client.connectToServer(serverIP);
 	}
 	
 	private static void log(String message) {
-		//System.out.println("[CLIENT] "+message);
+		System.out.println("[CLIENT] "+message);
 	}
 
 }

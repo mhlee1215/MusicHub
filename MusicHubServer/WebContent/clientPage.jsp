@@ -41,13 +41,15 @@
         	isConnected = true;
         	var clientName = $.trim($("#id_name").val());
             var hostIP = $.trim($("#id_host_ip").val());
+            var volume = $.trim($("#id_volume").val());
+            
          
             if(hostIP.length > 0)
             {
                 $.ajax({
                   type: "POST",
                   url: "connectToServer.do",
-                  data: ({hostIP: hostIP, clientName:clientName}),
+                  data: ({hostIP: hostIP, clientName:clientName, volume:volume}),
                   cache: false,
                   dataType: "text",
                   success: onConnectSuccess
@@ -110,7 +112,10 @@
 			<p>WIFI Signal : <span id="id_wifi_signal">${wifi_signal}</span></p>
         	
 	         <label for="name"">Host IP Address (For Listening): </label>
-	         <input type="text" name="name" id="id_host_ip" value="${ip}"  />
+	         <input type="text" name="name" id="id_host_ip" value="192.168.0.2"  />
+	         
+	         <label for="name"">Volume: </label>
+	         <input type="range" name="slider-1" id="id_volume" value="50" min="0" max="100" />
 	         
 	         <c:choose>
 		      <c:when test="${isPlay==true}">

@@ -14,6 +14,7 @@ public class Client {
 	private boolean init;
 	private boolean alive;
 	private boolean play;
+	private boolean streaming;
 	private int signal;
 	private String signalStr;
 	
@@ -24,10 +25,19 @@ public class Client {
 		this.out = out;
 		this.init = init;
 		this.alive = alive;
+		this.streaming = false;
 		setSignal(signal);
 		
 	}
 	
+	public boolean isStreaming() {
+		return streaming;
+	}
+
+	public void setStreaming(boolean streaming) {
+		this.streaming = streaming;
+	}
+
 	public int getSignal() {
 		return signal;
 	}

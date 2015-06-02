@@ -97,6 +97,7 @@ public class CapitalizeServer {
 			log("The capitalization server is stopped.");
 			listeningDaemon.stop();
 			listener.close();
+			server.stop();
 			start = false;
 		}
 	}
@@ -115,12 +116,12 @@ public class CapitalizeServer {
 			int clientNumber = 0;
 				
 			try {
-				server = new Capitalizer();
+				server = new Capitalizer(threshold);
 				try {
 	
 					while (true) {
 						log("Waiting.. next is " + clientNumber);
-						server.addListener(listener.accept(), clientNumber++, threshold);
+						server.addListener(listener.accept(), clientNumber++);
 						if (clientNumber == 1) {
 							server.start();
 						}
@@ -164,6 +165,7 @@ public class CapitalizeServer {
 		private int packetSize = 0;
 		private float packetSecLength = .1f; // Second
 		private long beginTimeGap = 1000;
+		int threshold = 0;
 
 		// private int clientNumber;
 
@@ -171,7 +173,60 @@ public class CapitalizeServer {
 			return this.clients;
 		}
 		
-		public Capitalizer() {
+		public int getLazyClientNum(){
+			int lazyNum = 0;
+			for(int i = 0 ; i < clients.size() ; i++){
+				if(threshold < clients.get(i).getSignal())
+					lazyNum++;
+			}
+			return lazyNum;
+		}
+		
+		public static AudioInputStream getAudioInputStream(){
+			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/ratherbe.wav";
+			String urlWavFile = "//http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
+			String wavFile2 = "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/ratherbe.wav";
+			AudioInputStream aInputStream = null;
+			try {
+				URL url = new URL(urlWavFile);
+				// InputStream bufferedIn = new
+				// BufferedInputStream(url.openStream());
+				aInputStream = AudioSystem.getAudioInputStream(url);
+			} catch (Exception ee) {
+				//ee.printStackTrace();
+				System.err.println("Fail to load online file.");
+				try {
+					FileInputStream fstream = new FileInputStream(wavFile);
+					
+					aInputStream = AudioSystem
+							.getAudioInputStream(new BufferedInputStream(
+									fstream));
+					
+				} catch (UnsupportedAudioFileException e) {
+					e.printStackTrace();
+					//return;
+				} catch (IOException e) {
+					try {
+						FileInputStream fstream = new FileInputStream(wavFile2);
+						
+						aInputStream = AudioSystem
+								.getAudioInputStream(new BufferedInputStream(
+										fstream));
+					} catch (UnsupportedAudioFileException eeee) {
+						eeee.printStackTrace();
+						//return;
+					} catch (IOException eee) {
+						eee.printStackTrace();
+						//return;
+					}
+				}
+
+			}
+			return aInputStream;
+		}
+		
+		public Capitalizer(int threshold) {
+			this.threshold = threshold;
 //			sockets = new ArrayList<Socket>();
 //			ins = new ArrayList<BufferedReader>();
 //			outs = new ArrayList<DataOutputStream>();
@@ -182,46 +237,10 @@ public class CapitalizeServer {
 
 			// Open Source stream
 
-			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
-			String urlWavFile = "//http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
-			String wavFile2 = "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
-
-			try {
-				URL url = new URL(urlWavFile);
-				// InputStream bufferedIn = new
-				// BufferedInputStream(url.openStream());
-				audioInputStream = AudioSystem.getAudioInputStream(url);
-			} catch (Exception ee) {
-				//ee.printStackTrace();
-				System.err.println("Fail to load online file.");
-				try {
-					FileInputStream fstream = new FileInputStream(wavFile);
-					
-					audioInputStream = AudioSystem
-							.getAudioInputStream(new BufferedInputStream(
-									fstream));
-					
-				} catch (UnsupportedAudioFileException e) {
-					e.printStackTrace();
-					return;
-				} catch (IOException e) {
-					try {
-						FileInputStream fstream = new FileInputStream(wavFile2);
-						audioInputStream = AudioSystem
-								.getAudioInputStream(new BufferedInputStream(
-										fstream));
-					} catch (UnsupportedAudioFileException eeee) {
-						eeee.printStackTrace();
-						return;
-					} catch (IOException eee) {
-						eee.printStackTrace();
-						return;
-					}
-				}
-
-			}
+			audioInputStream = getAudioInputStream();
 			audioFormat = audioInputStream.getFormat();
 
+			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
 			File file = new File(wavFile);
 			long audioFileLength = file.length();
 			int frameSize = audioFormat.getFrameSize();
@@ -243,7 +262,7 @@ public class CapitalizeServer {
 		// log("New connection with client# " + clientNumber + " at " + socket);
 		// }
 
-		public void addListener(Socket socket, int clientNumber, int threshold) {
+		public void addListener(Socket socket, int clientNumber) {
 			
 			log("New connection with client# " + clientNumber + " at " + socket);
 
@@ -281,6 +300,7 @@ public class CapitalizeServer {
 				out.writeLong((long) (1000 * packetSecLength));
 				out.writeLong(timeLookup.getCurrentTime());
 				out.writeInt(threshold);
+				out.writeInt(packetSize);
 				
 				
 				clients.add(clientNumber, new Client(socket, clientName, in, out, false, true, signal));
@@ -301,7 +321,8 @@ public class CapitalizeServer {
 		public void massWriteInt(int v) {
 			for (int sId = 0; sId < clients.size(); sId++) {
 				int clientNumber = sId;
-				if (!clients.get(clientNumber).isAlive())
+				if (!clients.get(clientNumber).isAlive() ||
+						!clients.get(clientNumber).isStreaming())
 					continue;
 
 				// Socket socket = sockets.get(clientNumber);
@@ -320,7 +341,8 @@ public class CapitalizeServer {
 		public void massWriteLong(long v) {
 			for (int sId = 0; sId < clients.size(); sId++) {
 				int clientNumber = sId;
-				if (!clients.get(clientNumber).isAlive())
+				if (!clients.get(clientNumber).isAlive() ||
+						!clients.get(clientNumber).isStreaming())
 					continue;
 
 				// Socket socket = sockets.get(clientNumber);
@@ -339,7 +361,8 @@ public class CapitalizeServer {
 		public void massWrite(byte[] data) {
 			for (int sId = 0; sId < clients.size(); sId++) {
 				int clientNumber = sId;
-				if (!clients.get(clientNumber).isAlive())
+				if (!clients.get(clientNumber).isAlive() ||
+						!clients.get(clientNumber).isStreaming())
 					continue;
 
 				// Socket socket = sockets.get(clientNumber);
@@ -368,7 +391,8 @@ public class CapitalizeServer {
 		public void massWriteBoolean(boolean v) {
 			for (int sId = 0; sId < clients.size(); sId++) {
 				int clientNumber = sId;
-				if (!clients.get(clientNumber).isAlive())
+				if (!clients.get(clientNumber).isAlive() ||
+						!clients.get(clientNumber).isStreaming())
 					continue;
 
 				// Socket socket = sockets.get(clientNumber);
@@ -381,6 +405,14 @@ public class CapitalizeServer {
 					log("Error handling client# " + clientNumber + ": " + e);
 					clients.get(clientNumber).setAlive(false);
 				}
+			}
+		}
+		
+		public void updateStreamingInfo(){
+			for (int sId = 0; sId < clients.size(); sId++) {
+				int clientNumber = sId;
+				if (clients.get(clientNumber).isAlive())
+					clients.get(clientNumber).setStreaming(true);
 			}
 		}
 
@@ -403,6 +435,7 @@ public class CapitalizeServer {
 					int bytesReadAll = 0;
 					while (true) {
 						log("Send packet #"+pId);
+						updateStreamingInfo();
 						//long beginTime = timeLookup.getCurrentTime();
 						if(bytesReadAll < packetSize){
 							bytesRead = audioInputStream.read(dataBuffer, 0,
@@ -412,52 +445,65 @@ public class CapitalizeServer {
 										bytesReadAll, bytesRead);
 								bytesReadAll += bytesRead;
 							}else{
-								//audioInputStream.reset();
-								try {
-									Clip clip = AudioSystem.getClip();
-									clip.open(audioInputStream);
-									clip.setFramePosition(0);
-								} catch (LineUnavailableException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								};
-								
+								audioInputStream = getAudioInputStream();
 								continue;
+								//audioInputStream.reset();
+//								try {
+//									Clip clip = AudioSystem.getClip();
+//									clip.open(audioInputStream);
+//									clip.setFramePosition(0);
+//								} catch (LineUnavailableException e) {
+//									// TODO Auto-generated catch block
+//									e.printStackTrace();
+//								};
+//								
+//								continue;
 							}
 						}
 
+						
+						int sizeToSend = 0;
 						if (bytesReadAll >= packetSize) {
-							System.arraycopy(dataBufferLarge, 0, data, 0, packetSize);
+							sizeToSend = packetSize;
+						}else{
+							sizeToSend = bytesReadAll;
+						}
+						sizeToSend = Math.max(0, sizeToSend);
+						
+//						if (bytesReadAll >= packetSize) {
+							System.arraycopy(dataBufferLarge, 0, data, 0, sizeToSend);
 
-							System.arraycopy(dataBufferLarge, packetSize, dataBufferLargeTmp, 0, bytesReadAll - packetSize);
-							System.arraycopy(dataBufferLargeTmp, 0, dataBufferLarge, 0, bytesReadAll - packetSize);
-							bytesReadAll -= packetSize;
+							System.arraycopy(dataBufferLarge, sizeToSend, dataBufferLargeTmp, 0, bytesReadAll - sizeToSend);
+							System.arraycopy(dataBufferLargeTmp, 0, dataBufferLarge, 0, bytesReadAll - sizeToSend);
+							bytesReadAll -= sizeToSend;
 
 							long playTime = (long) (curTime + beginTimeGap + pId * packetSecLength * 1000);
 
-							massWriteInt(packetSize); // write length of the message
+							log("send! byteRead:"+sizeToSend);
+							massWriteInt(sizeToSend); // write length of the message
+							log("send! length:"+data.length);
 							massWriteInt(data.length); // write length of the message
 							massWriteLong(playTime);
 							massWrite(data);
 							
 							pId++;
-						}
+//						}
 						// Buffer flush when reading is finished.
 						// Content in buffer is less than packet size.
-						if (bytesRead == -1) {
-							// long curTime = timeLookup.getCurrentTime();
-							long playTime = (long) (curTime + beginTimeGap + pId * packetSecLength * 1000);
-
-							log("flush massWrite #"+pId);
-							massWriteInt(bytesReadAll); // write length of the buffer
-							massWriteInt(data.length); // write length of the message
-							massWriteLong(playTime);
-							// log("!! "+bytesRead);
-							massWrite(data);
-							log("flush massWrite end #"+pId);
-
-							bytesReadAll = 0;
-						}
+//						if (bytesRead == -1) {
+//							// long curTime = timeLookup.getCurrentTime();
+//							long playTime = (long) (curTime + beginTimeGap + pId * packetSecLength * 1000);
+//
+//							log("flush massWrite #"+pId);
+//							massWriteInt(bytesReadAll); // write length of the buffer
+//							massWriteInt(data.length); // write length of the message
+//							massWriteLong(playTime);
+//							// log("!! "+bytesRead);
+//							massWrite(data);
+//							log("flush massWrite end #"+pId);
+//
+//							bytesReadAll = 0;
+//						}
 
 						//If byte reading is finished.
 						if (bytesRead == -1 && bytesReadAll == 0){
@@ -523,7 +569,7 @@ public class CapitalizeServer {
 	}
 	
 	private static void log(String message) {
-		//System.out.println("[SERVER] "+message);
+		System.out.println("[SERVER] "+message);
 	}
 
 }
