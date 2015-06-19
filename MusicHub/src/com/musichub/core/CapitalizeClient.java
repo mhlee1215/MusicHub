@@ -30,7 +30,7 @@ public class CapitalizeClient {
 	boolean play;
 	boolean connected;
 	String clientName = "";
-	String serverAddress = ""; 
+	String serverAddress = "";
 	
 	
 	
@@ -165,59 +165,125 @@ public class CapitalizeClient {
 				//log(curPacket.toString());
 				long curTime = timeLookup.getCurrentTime();
 				log("curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
-				//If current time is already passed, just trow away packet
-				if (curPacket.playTime < curTime){
-					continue;
-				}
-				//Else, wait the time until the specified time.
-				else{
+				
+				int gap = (int) (curPacket.playTime - curTime);
+				
+				if (gap < 0 && Math.abs(gap) > packetDuration) continue;
+				log("gap : "+gap);
+				int gapLength = (int)(curPacket.length * (gap/(float)packetDuration));
+				gapLength-=gapLength%4;
+				int expPacketSize = (int)(curPacket.length + gapLength);
+				byte[] packetSyn = new byte[expPacketSize];
+				if (gap >= 0){
+					packetSyn = curPacket.packet;
+					expPacketSize = curPacket.length;
 					try {
-						long sleepTime = curPacket.playTime - curTime - residual;
-						log("sleep : "+sleepTime);
-						log("residual : "+residual);
-						
-						curTime = timeLookup.getCurrentTime();
-						log("1curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
-						//if(sleepTime > 0)
-						//	sleep(0);
-						
-						curTime = timeLookup.getCurrentTime();
-						log("2curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
-					} 
-					catch (Exception e) {
+						sleep(gap);
+					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					//System.arraycopy(curPacket.packet, 0, packetSyn, gapLength, curPacket.length);
+				}else{
+					System.arraycopy(curPacket.packet, -gapLength, packetSyn, 0, expPacketSize);
 				}
 				
-				
-				//System.out.println("threshold : "+threshold+", signal:"+WifiDetector.getSignal());
-				int newSignal = WifiDetector.getSignal();
-				float meanSignal = signalMeanClass.signalMean(newSignal);
-				
-				if(newSignal != WifiDetector.SIGNAL_INIT){
-					float v_ratio = Math.min(1, Math.max(0, meanSignal - threshold)/(float)40);
-					float v_ratio2 = (float)Math.pow(v_ratio, 0.5);
-					//System.out.println("v_ratio:"+v_ratio+", v_ratio2:"+v_ratio2);
-					setVolume(v_ratio2);
-				}
-				
-//				System.out.println("1newSignal: "+newSignal);
-//				System.out.println("meanSignal: "+meanSignal);
-//				System.out.println("signalList:"+signalList);
-				
+				log("expPacketSIze:"+expPacketSize+", gapLength: "+gapLength+", curPacket.length: "+curPacket.length);
 				
 				long beforeTime = timeLookup.getCurrentTime();
-				if(this.threshold <= meanSignal || newSignal == WifiDetector.SIGNAL_INIT ){
-					sourceDataLine.write(curPacket.packet, 0, curPacket.length);
-				}else{
-					//System.out.println("Signal low.. pass packet");
-					//Do nothing!.
-				}
+				log("playtime gap : "+ (curPacket.playTime - beforeTime));
+				sourceDataLine.write(packetSyn, 0, expPacketSize);
 				long afterTime = timeLookup.getCurrentTime();
 				residual = packetDuration - (afterTime - beforeTime);
-				log("time gap : "+(afterTime-beforeTime));
-				log("residual : "+residual);
+				log("packetDuration : "+packetDuration);
+				log("beforeTime : "+beforeTime);
+				log("afterTime : "+afterTime);
+				log("Residual : "+residual);
+//				try {
+//					sleep(residual/2);
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+				
+//				//If current time is already passed, just trow away packet
+//				if (curPacket.playTime < curTime){
+//					continue;
+//				}
+//				//Else, wait the time until the specified time.
+//				else{
+//					try {
+//						long sleepTime = curPacket.playTime - curTime;
+//						log("sleep : "+sleepTime);
+//						log("residual : "+residual);
+//						
+//						curTime = timeLookup.getCurrentTime();
+//						log("1curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
+//						
+//						sleep(sleepTime);
+//						
+////						while(sleepTime > 0){
+////							log("sleepTime_sleep : "+sleepTime);
+////							sleep(5);
+////							curTime = timeLookup.getCurrentTime();
+////							sleepTime = curPacket.playTime - curTime;
+////						}
+//						
+//						curTime = timeLookup.getCurrentTime();
+//						log("2curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
+//					} 
+//					catch (Exception e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//				}
+//				
+//				
+//				//System.out.println("threshold : "+threshold+", signal:"+WifiDetector.getSignal());
+//				int newSignal = WifiDetector.getSignal();
+//				float meanSignal = signalMeanClass.signalMean(newSignal);
+//				
+//				if(newSignal != WifiDetector.SIGNAL_INIT){
+//					float v_ratio = Math.min(1, Math.max(0, meanSignal - threshold)/(float)40);
+//					float v_ratio2 = (float)Math.pow(v_ratio, 0.5);
+//					//System.out.println("v_ratio:"+v_ratio+", v_ratio2:"+v_ratio2);
+//					setVolume(v_ratio2);
+//				}
+//				
+////				System.out.println("1newSignal: "+newSignal);
+////				System.out.println("meanSignal: "+meanSignal);
+////				System.out.println("signalList:"+signalList);
+//				
+//				
+//				long beforeTime = timeLookup.getCurrentTime();
+//				if(this.threshold <= meanSignal || newSignal == WifiDetector.SIGNAL_INIT ){
+//					sourceDataLine.write(curPacket.packet, 0, curPacket.length);
+//				}else{
+//					//System.out.println("Signal low.. pass packet");
+//					//Do nothing!.
+//				}
+//				long afterTime = timeLookup.getCurrentTime();
+//				residual = packetDuration - (afterTime - beforeTime);
+//				log("time gap : "+(afterTime-beforeTime));
+//				log("residual : "+residual);
+//				
+//				try {
+//					sleep(residual);
+//				} catch (InterruptedException e1) {
+//					// TODO Auto-generated catch block
+//					e1.printStackTrace();
+//				}
+//				while(residual > 0){
+//					log("residual_sleep : "+residual);
+//					try {
+//						sleep(5);
+//					} catch (InterruptedException e) {
+//						e.printStackTrace();
+//					}
+//					afterTime = timeLookup.getCurrentTime();
+//					residual = packetDuration - (afterTime - beforeTime);
+//
+//				}
 			}
 		}
 		
