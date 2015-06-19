@@ -30,7 +30,7 @@ public class CapitalizeClient {
 	boolean play;
 	boolean connected;
 	String clientName = "";
-	String serverAddress = "";
+	String serverAddress = ""; 
 	
 	
 	
