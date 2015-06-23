@@ -2,47 +2,53 @@ package com.musichub.musichubandroid;
 
 // List of time servers: http://tf.nist.gov/service/time-servers.html
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
 
-//import org.apache.commons.net.ntp.NTPUDPClient;
-//import org.apache.commons.net.ntp.TimeInfo;
+import org.apache.commons.net.ntp.NTPUDPClient;
+import org.apache.commons.net.ntp.TimeInfo;
+//import org.apache.commons.net.time.TimeTCPClient;
+//import org.apache.commons.net.time.TimeUDPClient;
+
 
 public class TimeLookup {
 	long offset = 0;
 	public static final String TIME_SERVER = "time-a.nist.gov";
 
-	public TimeLookup() {
+	public TimeLookup() throws Exception{
 		// Global Time
-		//NTPUDPClient timeClient = new NTPUDPClient();
+		NTPUDPClient timeClient = new NTPUDPClient();
 		InetAddress inetAddress = null;
-		//TimeInfo timeInfo = null;
+		TimeInfo timeInfo = null;
 		this.offset = 0;
-//		try {
-//			inetAddress = InetAddress.getByName(TIME_SERVER);
-//			timeInfo = timeClient.getTime(inetAddress);
-//
-//			long returnTime = timeInfo.getReturnTime();
-//			Date time = new Date(returnTime);
-//			long globalSinceMidnight = time.getTime() % (24 * 60 * 60 * 1000);
-//			// System.out.println("Time from " + TIME_SERVER + ": " + time);
-//			// System.out.println(returnTime);
-//			//System.out.println("globalSinceMidnight: " + globalSinceMidnight);
-//
-//			// Local time
-//			Date localTime = new Date();
-//			long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
-//			//System.out.println("localSinceMidnight: " + localSinceMidnight);
-//
-//			this.offset = globalSinceMidnight - localSinceMidnight;
-//		} catch (UnknownHostException e) {
+		//try {
+			inetAddress = InetAddress.getByName(TIME_SERVER);
+			timeInfo = timeClient.getTime(inetAddress);
 
+			long returnTime = timeInfo.getReturnTime();
+			Date time = new Date(returnTime);
+			long globalSinceMidnight = time.getTime() % (24 * 60 * 60 * 1000);
+			// System.out.println("Time from " + TIME_SERVER + ": " + time);
+			// System.out.println(returnTime);
+			//System.out.println("globalSinceMidnight: " + globalSinceMidnight);
+
+			// Local time
+			Date localTime = new Date();
+			long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
+			//System.out.println("localSinceMidnight: " + localSinceMidnight);
+
+			this.offset = globalSinceMidnight - localSinceMidnight;
+		//}
+//		catch (UnknownHostException e) {
+//
 //			e.printStackTrace();
 //			//this.offset = offset;
 //		} catch (IOException e) {
-
+//
 //			e.printStackTrace();
 //			//return offset;
 //		}
@@ -50,10 +56,11 @@ public class TimeLookup {
 		
 	}
 	
-	public TimeLookup(long globalSinceMidnight){
+	public TimeLookup(long ServerTimeSinceMidnight){
+
 		Date localTime = new Date();
 		long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
-		this.offset = globalSinceMidnight - localSinceMidnight;
+		this.offset = ServerTimeSinceMidnight - localSinceMidnight;
 	}
 	
 	public long getCurrentTime(){
