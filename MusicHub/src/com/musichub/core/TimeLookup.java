@@ -27,9 +27,9 @@ public class TimeLookup {
 			long returnTime = timeInfo.getReturnTime();
 			Date time = new Date(returnTime);
 			long globalSinceMidnight = time.getTime() % (24 * 60 * 60 * 1000);
-			// System.out.println("Time from " + TIME_SERVER + ": " + time);
-			// System.out.println(returnTime);
-			//System.out.println("globalSinceMidnight: " + globalSinceMidnight);
+			System.out.println("Time from " + TIME_SERVER + ": " + time);
+			System.out.println(returnTime);
+			System.out.println("globalSinceMidnight: " + globalSinceMidnight);
 
 			// Local time
 			Date localTime = new Date();
@@ -37,6 +37,7 @@ public class TimeLookup {
 			//System.out.println("localSinceMidnight: " + localSinceMidnight);
 
 			this.offset = globalSinceMidnight - localSinceMidnight;
+			System.out.println("offset : "+offset);
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			System.err.println("Fail to get time from server");
@@ -51,10 +52,11 @@ public class TimeLookup {
 		
 	}
 	
-	public TimeLookup(long globalSinceMidnight){
+	public TimeLookup(long ServerTimeSinceMidnight){
+
 		Date localTime = new Date();
 		long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
-		this.offset = globalSinceMidnight - localSinceMidnight;
+		this.offset = ServerTimeSinceMidnight - localSinceMidnight;
 	}
 	
 	public long getCurrentTime(){
