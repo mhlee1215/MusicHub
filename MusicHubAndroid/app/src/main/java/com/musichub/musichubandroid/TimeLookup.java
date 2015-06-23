@@ -62,6 +62,10 @@ public class TimeLookup {
 		return localSinceMidnight + offset;
 	}
 
+	public void adjustOffset(long adjustOffset){
+		this.offset += adjustOffset;
+	}
+
 	public static void main(String[] args) throws Exception {
 		// Global Time
 //		NTPUDPClient timeClient = new NTPUDPClient();

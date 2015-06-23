@@ -4,7 +4,7 @@ package com.musichub.musichubandroid;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.nfc.Tag;
+import android.os.SystemClock;
 import android.util.Log;
 
 
@@ -14,6 +14,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -125,7 +126,8 @@ public class CapitalizeClient {
 		AudioTrack sourceDataLine = null;
 		long packetDuration = 0;
 		int threshold;
-		SignalMeanClass signalMeanClass;
+		MeanClass gapMeanClass, reMeanClass, pGapMeanClass;
+		int meanSize = 5;
 
 		public PlayDaemon(AudioTrack sourceDataLine, long packetDuration, int threshold){
 			this.sourceDataLine = sourceDataLine;
@@ -136,7 +138,10 @@ public class CapitalizeClient {
 
 			this.packetDuration = packetDuration;
 			this.threshold = threshold;
-			signalMeanClass = new SignalMeanClass();
+
+			gapMeanClass = new MeanClass(meanSize);
+			reMeanClass = new MeanClass(meanSize);
+			pGapMeanClass = new MeanClass(meanSize);
 		}
 
 		public AudioTrack getDataLine(){
@@ -146,6 +151,9 @@ public class CapitalizeClient {
 		@Override
 		public void run() {
 			long residual = 0;
+
+			int counter = 0;
+
 			while(true){
 				if (packets.size() == 0){
 					try {
@@ -157,49 +165,97 @@ public class CapitalizeClient {
 						log("No packet to play.. wait..");
 					}
 				}
-				log("##packets.size() :"+packets.size());
+				//log("##packets.size() :"+packets.size());
 
+				counter++;
 				AudioPacket curPacket = packets.poll();
 //				sourceDataLine.write(curPacket.packet, 0, curPacket.length);
 //				if(1==1) continue;
 				//log(curPacket.toString());
 				long curTime = timeLookup.getCurrentTime();
-				log("curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
-
 				int gap = (int) (curPacket.playTime - curTime);
 
-				if (gap < 0 && Math.abs(gap) > packetDuration) continue;
-				log("gap : "+gap);
-				int gapLength = (int)(curPacket.length * (gap/(float)packetDuration));
-				int expDuration = (int) (gap+packetDuration);
-				gapLength-=gapLength%4;
-				int expPacketSize = (int)(curPacket.length + gapLength);
-				byte[] packetSyn = new byte[expPacketSize];
-				if (gap >= 0){
-					packetSyn = curPacket.packet;
-					expPacketSize = curPacket.length;
-					try {
-						sleep(Math.max((gap)/2, 0));
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+				float gapMean = gapMeanClass.mean(gap);
+				//log("gap : "+gap+", gapMean:"+gapMean);
+				if (gapMean < 0 && Math.abs(gapMean) > packetDuration) continue;
+//				int gapLength = (int)(curPacket.length * (gap/(float)packetDuration));
+				int expDuration = 0;//(int) (gap+packetDuration);
+//				gapLength-=gapLength%4;
+				int expPacketSize = 0;//(int)(curPacket.length + gapLength);
+				byte[] packetSyn = null;//new byte[expPacketSize];
+				packetSyn = curPacket.packet;
+				expPacketSize = curPacket.length;
+				expDuration = (int) (packetDuration);
+
+				int threshold = 20;
+				if (gapMean >= 0){
+					if(gapMean >= 10){// && counter%gapMeanClass.SIZE == 0) {
+						long curTime2 = timeLookup.getCurrentTime();
+						long gap2 = (long)gapMean;
+
+						long curTime3 = timeLookup.getCurrentTime();
+						int gap3 = (int) (curPacket.playTime - curTime3);
+						log("gap before "+gap3);
+
+						long sleepTime = (long) (gapMean - 10);
+						log("Sleep! time:" + sleepTime);
+						while(gap3 > 0){
+						//	SystemClock.sleep(1);
+							for (int ii = 0; ii < 100 ; ii++){
+								ii+=ii;
+							}
+//							try {
+//	//							sleep((long) (gapMean - 5));
+//								Thread.sleep(0, 1);
+//								//sleep(1);
+//							} catch (InterruptedException e) {
+//								// TODO Auto-generated catch block
+//								e.printStackTrace();
+//							}
+
+							curTime3 = timeLookup.getCurrentTime();
+							gap3 = (int) (curPacket.playTime - curTime3);
+							//log("gap after "+gap3);
+						}
+						log("gap after "+gap3);
 					}
+
+
 					//System.arraycopy(curPacket.packet, 0, packetSyn, gapLength, curPacket.length);
 				}else{
-					System.arraycopy(curPacket.packet, -gapLength, packetSyn, 0, expPacketSize);
+					if(gapMean < -10) {
+//						log("Negative Gap!, gapMean"+gapMean);
+//						int correctingGap = (int) (-gapMean/2);
+//						int gapLength = (int)(curPacket.length * (correctingGap/(float)packetDuration));
+//						expDuration = (int) (correctingGap+packetDuration);
+//						gapLength-=gapLength%4;
+//						expPacketSize = (int)(curPacket.length + gapLength);
+//						packetSyn = new byte[expPacketSize];
+//
+//						System.arraycopy(curPacket.packet, (int) -correctingGap, packetSyn, 0, expPacketSize);
+					}
 				}
 
-				log("expPacketSIze:"+expPacketSize+", gapLength: "+gapLength+", curPacket.length: "+curPacket.length);
+
 
 				long beforeTime = timeLookup.getCurrentTime();
-				log("playtime gap :\t\t\t\t\t\t"+ (curPacket.playTime - beforeTime));
+				//log("playtime gap :\t\t\t\t\t\t"+ (curPacket.playTime - beforeTime));
+				//ByteBuffer buf = ByteBuffer.wrap(packetSyn);
+				//sourceDataLine.write(buf, expPacketSize, 0);
+				//sourceDataLine.write(buf, expPacketSize, 0);
 				sourceDataLine.write(packetSyn, 0, expPacketSize);
+
 				long afterTime = timeLookup.getCurrentTime();
 				residual = expDuration - (afterTime - beforeTime);
-				log("packetDuration : "+packetDuration);
-				log("beforeTime : "+beforeTime);
-				log("afterTime : "+afterTime);
-				log("Residual : "+residual);
+//				log("packetDuration : "+packetDuration);
+//				log("beforeTime : "+beforeTime);
+//				log("afterTime : "+afterTime);
+//				log("Residual : "+residual);
+
+				int pGap = (int) (curPacket.playTime - beforeTime);
+
+				log("curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+gap+"("+gapMean+"), cur.len: "+curPacket.length+", p gap :"+ pGap+"("+pGapMeanClass.mean(pGap)+"), be:"+beforeTime+",af:"+afterTime+",re:"+residual+"("+reMeanClass.mean((int) residual)+")");
+				//log("curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+gap+"exp:"+expPacketSize+", gapL: "+gapLength+", cur.len: "+curPacket.length+", p gap :"+ (curPacket.playTime - beforeTime)+", dur:"+packetDuration+",be:"+beforeTime+",af:"+afterTime+",re:"+residual);
 //				try {
 //					sleep(residual/2);
 //				} catch (InterruptedException e) {
@@ -226,37 +282,44 @@ public class CapitalizeClient {
 	}
 
 
-	public static class SignalMeanClass {
-		int SIGNAL_SIZE = 5;
-		List<Integer> signalList;
+	public static class MeanClass {
+		public int SIZE = 5;
+		List<Integer> list;
 		int nextPointer = 0;
 
-		public SignalMeanClass(){
-			signalList = new ArrayList<Integer>(SIGNAL_SIZE);
-			for(int i = 0 ; i <SIGNAL_SIZE ; i++)
-				signalList.add(0);
+		public MeanClass(int size){
+			this.SIZE = size;
+			list = new ArrayList<Integer>(SIZE);
+			for(int i = 0 ; i < SIZE; i++)
+				list.add(0);
+		}
+
+		public MeanClass(){
+			list = new ArrayList<Integer>(SIZE);
+			for(int i = 0 ; i < SIZE; i++)
+				list.add(0);
 		}
 
 
-		public float signalMean(int newSignal){
-			signalList.set(nextPointer, newSignal);
+		public float mean(int newData){
+			list.set(nextPointer, newData);
 			nextPointer++;
-			if(nextPointer == SIGNAL_SIZE) nextPointer = 0;
+			if(nextPointer == SIZE) nextPointer = 0;
 
-			return signalMean();
+			return mean();
 		}
 
-		public float signalMean(){
-			int meanSignal = 0;
+		public float mean(){
+			int meanData = 0;
 
 			int counted = 0;
-			for(int i = 0 ; i < signalList.size(); i++){
-				if(signalList.get(i) != 0){
-					meanSignal += signalList.get(i);
+			for(int i = 0 ; i < list.size(); i++){
+				if(list.get(i) != 0){
+					meanData += list.get(i);
 					counted++;
 				}
 			}
-			return meanSignal / (float)counted;
+			return meanData / (float)counted;
 		}
 	}
 
@@ -272,7 +335,7 @@ public class CapitalizeClient {
 		DataOutputStream out = null;
 		AudioTrack sourceDataLine = null;
 		int bufferedCycle = 0;
-		SignalMeanClass signalMeanClass;
+		MeanClass signalMeanClass;
 
 		boolean isInit = false;
 
@@ -292,7 +355,7 @@ public class CapitalizeClient {
 			this.in = in;
 			this.out = out;
 			this.bufferedCycle = bufferedCycle;
-			signalMeanClass = new SignalMeanClass();
+			signalMeanClass = new MeanClass();
 
 			try {
 				if(!isInit){
@@ -307,9 +370,20 @@ public class CapitalizeClient {
 					isBigEndian = in.readBoolean();
 					packetDuration = in.readLong();
 					severTime = in.readLong();
+					timeLookup = new TimeLookup(severTime);
+
+					int responseTimeCheckCount = in.readInt();
+					long intervalMean = 0;
+					for(int ii = 0 ; ii < responseTimeCheckCount ; ii++){
+						long serverTime2 = in.readLong();
+						intervalMean += timeLookup.getCurrentTime() - serverTime2;
+					}
+					timeLookup.adjustOffset(intervalMean/responseTimeCheckCount);
+					timeLookup.adjustOffset(210);
+					log("intervalMean/responseTimeCheckCount: "+intervalMean/responseTimeCheckCount+", intervalMean:"+intervalMean);
 					threshold = in.readInt();
 					packetSize = in.readInt();
-					timeLookup = new TimeLookup(severTime);
+
 					isInit = true;
 				}
 
@@ -366,7 +440,7 @@ public class CapitalizeClient {
 
 
 
-					log("byteRead:"+byteRead+", length:"+length+", packetSize:"+packetSize);
+					//log("byteRead:"+byteRead+", length:"+length+", packetSize:"+packetSize);
 
 					if(byteRead < 0 || length < 0 || byteRead > packetSize*10 || length > packetSize*10){
 						byteRead = 0;
@@ -384,7 +458,7 @@ public class CapitalizeClient {
 						in.readFully(message, 0, packetSize); // read the message
 
 						int newSignal = -1000;//WifiDetector.getSignal();
-						float meanSignal = signalMeanClass.signalMean(newSignal);
+						float meanSignal = signalMeanClass.mean(newSignal);
 						out.writeInt(Math.round(meanSignal));
 
 
