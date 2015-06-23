@@ -187,43 +187,36 @@ public class CapitalizeClient {
 				expPacketSize = curPacket.length;
 				expDuration = (int) (packetDuration);
 
-				int threshold = 20;
-				if (gapMean >= 0){
-					if(gapMean >= 10){// && counter%gapMeanClass.SIZE == 0) {
-						long curTime2 = timeLookup.getCurrentTime();
-						long gap2 = (long)gapMean;
+				//int threshold = 20;
+				if (gap > 0){
+
+					//if(gapMean >= 10){// && counter%gapMeanClass.SIZE == 0) {
+//						long curTime2 = timeLookup.getCurrentTime();
+//						long gap2 = (long)gapMean;
 
 						long curTime3 = timeLookup.getCurrentTime();
 						int gap3 = (int) (curPacket.playTime - curTime3);
 						log("gap before "+gap3);
 
-						long sleepTime = (long) (gapMean - 10);
-						log("Sleep! time:" + sleepTime);
+						//Better way of sync than sleep.
+						//But not so sure about battery consuming..
 						while(gap3 > 0){
-						//	SystemClock.sleep(1);
-							for (int ii = 0; ii < 100 ; ii++){
+							for (int ii = 0; ii < 50 ; ii++){
 								ii+=ii;
 							}
-//							try {
-//	//							sleep((long) (gapMean - 5));
-//								Thread.sleep(0, 1);
-//								//sleep(1);
-//							} catch (InterruptedException e) {
-//								// TODO Auto-generated catch block
-//								e.printStackTrace();
-//							}
 
 							curTime3 = timeLookup.getCurrentTime();
 							gap3 = (int) (curPacket.playTime - curTime3);
-							//log("gap after "+gap3);
 						}
 						log("gap after "+gap3);
-					}
+					//}
 
 
 					//System.arraycopy(curPacket.packet, 0, packetSyn, gapLength, curPacket.length);
 				}else{
 					if(gapMean < -10) {
+						//Do nothing! it's okay. till now..
+
 //						log("Negative Gap!, gapMean"+gapMean);
 //						int correctingGap = (int) (-gapMean/2);
 //						int gapLength = (int)(curPacket.length * (correctingGap/(float)packetDuration));
@@ -371,6 +364,7 @@ public class CapitalizeClient {
 					packetDuration = in.readLong();
 					severTime = in.readLong();
 					timeLookup = new TimeLookup(severTime);
+					log("TEST!!! :"+timeLookup.offset);
 
 					int responseTimeCheckCount = in.readInt();
 					long intervalMean = 0;
@@ -379,7 +373,7 @@ public class CapitalizeClient {
 						intervalMean += timeLookup.getCurrentTime() - serverTime2;
 					}
 					timeLookup.adjustOffset(intervalMean/responseTimeCheckCount);
-					timeLookup.adjustOffset(210);
+					//timeLookup.adjustOffset(210);
 					log("intervalMean/responseTimeCheckCount: "+intervalMean/responseTimeCheckCount+", intervalMean:"+intervalMean);
 					threshold = in.readInt();
 					packetSize = in.readInt();
