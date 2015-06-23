@@ -20,6 +20,11 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
+    @IBAction func showMessage(){
+        let alertController = UIAlertController(title:"test", message:"hello world", preferredStyle:UIAlertControllerStyle.Alert)
+        alertController.addAction(UIAlertAction(title: "ok", style: UIAlertActionStyle.Default, handler: nil))
+        self.presentViewController(alertController, animated: true, completion: nil)
+    }
 
 }
 
