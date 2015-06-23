@@ -4,6 +4,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -326,6 +327,40 @@ public class CapitalizeClient {
 		}
 	}
 	
+	public static class MeanClass {
+		int SIZE = 5;
+		List<Integer> list;
+		int nextPointer = 0;
+
+		public MeanClass(){
+			list = new ArrayList<Integer>(SIZE);
+			for(int i = 0 ; i < SIZE; i++)
+				list.add(0);
+		}
+
+
+		public float mean(int newData){
+			list.set(nextPointer, newData);
+			nextPointer++;
+			if(nextPointer == SIZE) nextPointer = 0;
+
+			return mean();
+		}
+
+		public float mean(){
+			int meanData = 0;
+
+			int counted = 0;
+			for(int i = 0 ; i < list.size(); i++){
+				if(list.get(i) != 0){
+					meanData += list.get(i);
+					counted++;
+				}
+			}
+			return meanData / (float)counted;
+		}
+	}
+	
 	
 	
 	
@@ -372,9 +407,20 @@ public class CapitalizeClient {
 					isBigEndian = in.readBoolean();
 					packetDuration = in.readLong();
 					severTime = in.readLong();
+					timeLookup = new TimeLookup(severTime);
+					
+					//out.writeLong(timeLookup.getCurrentTime());
+					int responseTimeCheckCount = in.readInt();
+					long intervalMean = 0;
+					for(int ii = 0 ; ii < responseTimeCheckCount ; ii++){
+						long serverTime2 = in.readLong();
+						intervalMean += timeLookup.getCurrentTime() - serverTime2;
+					}
+					timeLookup.adjustOffset(intervalMean/responseTimeCheckCount);
+					
 					threshold = in.readInt();
 					packetSize = in.readInt();
-					timeLookup = new TimeLookup(severTime);
+					
 					isInit = true;
 				}
 				
@@ -550,6 +596,21 @@ public class CapitalizeClient {
 	
 
 	public static void main(String[] args) throws Exception {
+		
+		
+//		MeanClass a = new MeanClass();
+//		System.out.println(a.mean(10));
+//		System.out.println(a.mean(10));
+//		System.out.println(a.mean(10));
+//		System.out.println(a.mean(10));
+//		System.out.println(a.mean(-100));
+//		
+//
+		
+//		byte[] bytes = new byte[10];
+//		ByteBuffer buf = ByteBuffer.wrap(bytes);
+//		System.out.println(buf);
+//		if(1==1) return;
 		
 		log("I am client");
 		// TODO Auto-generated method stub

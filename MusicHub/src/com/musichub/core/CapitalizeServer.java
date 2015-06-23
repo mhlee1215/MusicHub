@@ -183,6 +183,7 @@ public class CapitalizeServer {
 		}
 		
 		public static AudioInputStream getAudioInputStream(){
+			//String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/Metronome120.wav";
 			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/ratherbe.wav";
 			String urlWavFile = "//http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
 			String wavFile2 = "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/ratherbe.wav";
@@ -299,6 +300,14 @@ public class CapitalizeServer {
 				out.writeBoolean(audioFormat.isBigEndian());
 				out.writeLong((long) (1000 * packetSecLength));
 				out.writeLong(timeLookup.getCurrentTime());
+				
+				//long clientTime = in.readLong();
+				
+				int responseTimeCheckCount = 10;
+				out.writeInt(responseTimeCheckCount);
+				for(int ii = 0 ; ii < responseTimeCheckCount ; ii++)
+					out.writeLong(timeLookup.getCurrentTime());
+				
 				out.writeInt(threshold);
 				out.writeInt(packetSize);
 				

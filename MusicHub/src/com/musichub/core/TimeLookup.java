@@ -62,6 +62,10 @@ public class TimeLookup {
 		long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
 		return localSinceMidnight + offset;
 	}
+	
+	public void adjustOffset(long adjustOffset){
+		this.offset += adjustOffset;
+	}
 
 	public static void main(String[] args) throws Exception {
 		// Global Time
