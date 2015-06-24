@@ -7,9 +7,14 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <OpenAl/al.h>
+#import <OpenAl/alc.h>
+#include <AudioToolbox/AudioToolbox.h>
 
 @interface ViewController : UIViewController
 
+@property (weak, nonatomic) IBOutlet UITextField *ipAddress;
 
 @end
+
 

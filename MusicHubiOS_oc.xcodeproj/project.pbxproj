@@ -14,6 +14,7 @@
 		04E22E8F1B3B5ED00045B875 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 04E22E8E1B3B5ED00045B875 /* Images.xcassets */; };
 		04E22E921B3B5ED00045B875 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 04E22E901B3B5ED00045B875 /* LaunchScreen.xib */; };
 		04E22E9E1B3B5ED00045B875 /* MusicHubiOS_ocTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 04E22E9D1B3B5ED00045B875 /* MusicHubiOS_ocTests.m */; };
+		04E22EA81B3B67B30045B875 /* OpenAL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 04E22EA71B3B67B30045B875 /* OpenAL.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +41,7 @@
 		04E22E971B3B5ED00045B875 /* MusicHubiOS_ocTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MusicHubiOS_ocTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		04E22E9C1B3B5ED00045B875 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		04E22E9D1B3B5ED00045B875 /* MusicHubiOS_ocTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MusicHubiOS_ocTests.m; sourceTree = "<group>"; };
+		04E22EA71B3B67B30045B875 /* OpenAL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenAL.framework; path = System/Library/Frameworks/OpenAL.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,6 +49,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04E22EA81B3B67B30045B875 /* OpenAL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -63,6 +66,7 @@
 		04E22E751B3B5ED00045B875 = {
 			isa = PBXGroup;
 			children = (
+				04E22EA71B3B67B30045B875 /* OpenAL.framework */,
 				04E22E801B3B5ED00045B875 /* MusicHubiOS_oc */,
 				04E22E9A1B3B5ED00045B875 /* MusicHubiOS_ocTests */,
 				04E22E7F1B3B5ED00045B875 /* Products */,
