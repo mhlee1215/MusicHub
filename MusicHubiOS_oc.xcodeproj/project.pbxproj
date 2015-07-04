@@ -15,6 +15,8 @@
 		04E22E921B3B5ED00045B875 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 04E22E901B3B5ED00045B875 /* LaunchScreen.xib */; };
 		04E22E9E1B3B5ED00045B875 /* MusicHubiOS_ocTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 04E22E9D1B3B5ED00045B875 /* MusicHubiOS_ocTests.m */; };
 		04E22EA81B3B67B30045B875 /* OpenAL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 04E22EA71B3B67B30045B875 /* OpenAL.framework */; };
+		04E22EAB1B3B68810045B875 /* ratherbe.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 04E22EA91B3B68810045B875 /* ratherbe.mp3 */; };
+		04E22EAC1B3B68810045B875 /* ratherbe.wav in Resources */ = {isa = PBXBuildFile; fileRef = 04E22EAA1B3B68810045B875 /* ratherbe.wav */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +44,8 @@
 		04E22E9C1B3B5ED00045B875 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		04E22E9D1B3B5ED00045B875 /* MusicHubiOS_ocTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MusicHubiOS_ocTests.m; sourceTree = "<group>"; };
 		04E22EA71B3B67B30045B875 /* OpenAL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenAL.framework; path = System/Library/Frameworks/OpenAL.framework; sourceTree = SDKROOT; };
+		04E22EA91B3B68810045B875 /* ratherbe.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = ratherbe.mp3; sourceTree = "<group>"; };
+		04E22EAA1B3B68810045B875 /* ratherbe.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ratherbe.wav; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +70,8 @@
 		04E22E751B3B5ED00045B875 = {
 			isa = PBXGroup;
 			children = (
+				04E22EA91B3B68810045B875 /* ratherbe.mp3 */,
+				04E22EAA1B3B68810045B875 /* ratherbe.wav */,
 				04E22EA71B3B67B30045B875 /* OpenAL.framework */,
 				04E22E801B3B5ED00045B875 /* MusicHubiOS_oc */,
 				04E22E9A1B3B5ED00045B875 /* MusicHubiOS_ocTests */,
@@ -203,6 +209,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04E22EAB1B3B68810045B875 /* ratherbe.mp3 in Resources */,
+				04E22EAC1B3B68810045B875 /* ratherbe.wav in Resources */,
 				04E22E8D1B3B5ED00045B875 /* Main.storyboard in Resources */,
 				04E22E921B3B5ED00045B875 /* LaunchScreen.xib in Resources */,
 				04E22E8F1B3B5ED00045B875 /* Images.xcassets in Resources */,
