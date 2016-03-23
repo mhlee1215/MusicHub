@@ -186,7 +186,7 @@ public class CapitalizeServer {
 			//String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/Metronome120.wav";
 			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/ratherbe.wav";
 			String urlWavFile = "//http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
-			String wavFile2 = "/Users/mac/Dropbox/class/2015_spring_cs244/code/data/ratherbe.wav";
+			String wavFile2 = "/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/ratherbe.wav";
 			AudioInputStream aInputStream = null;
 			try {
 				URL url = new URL(urlWavFile);

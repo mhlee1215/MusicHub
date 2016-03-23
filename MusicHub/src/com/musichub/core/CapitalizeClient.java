@@ -19,6 +19,8 @@ import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
+import com.musichub.utils.ThreadController;
+
 public class CapitalizeClient {
 
 	
@@ -119,7 +121,7 @@ public class CapitalizeClient {
 
 
 
-	public static class PlayDaemon extends Thread {
+	public static class PlayDaemon extends ThreadController {
 		
 		
 		SourceDataLine sourceDataLine = null;
@@ -147,7 +149,15 @@ public class CapitalizeClient {
 		public void run() {
 			// TODO Auto-generated method stub
 			long residual = 0;
-			while(true){
+			while (!isFinished()) {
+				synchronized (getLock()) {
+					while (isPaused()) {
+						try {
+							getLock().wait();
+						} catch (InterruptedException e) {
+						}
+					}
+				}
 				if (packets.size() == 0){
 					try {
 						Thread.sleep(1000);
@@ -366,7 +376,7 @@ public class CapitalizeClient {
 	
 	
 	
-	public static class ReceiveDaemon extends Thread {
+	public static class ReceiveDaemon extends ThreadController {
 
 		Socket socket = null;
 		DataInputStream in = null;
@@ -461,7 +471,15 @@ public class CapitalizeClient {
 			int errCount = 0;
 			byte[] message = null;//new byte[packetSize];//new byte[length];
 		    byte[] message2 = null;//new byte[packetSize];;//new byte[byteRead];
-			while (true) {
+		    while (!isFinished()) {
+				synchronized (getLock()) {
+					while (isPaused()) {
+						try {
+							getLock().wait();
+						} catch (InterruptedException e) {
+						}
+					}
+				}
 				try {
 					int byteRead = in.readInt();
 					int length = in.readInt();
@@ -572,9 +590,9 @@ public class CapitalizeClient {
 	public synchronized void disconnectToServer(){
 		log("disconnectToServer");
 		if(receiveDaemon!=null)
-			receiveDaemon.stop();
+			receiveDaemon.onStop();
 		if(playDaemon != null)
-			playDaemon.stop();
+			playDaemon.onStop();
 		try {
 			receiveDaemon.socket.close();
 		} catch (IOException e) {
