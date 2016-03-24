@@ -146,7 +146,12 @@ public class CapitalizeServer {
 		// TODO Auto-generated method stub
 		CapitalizeServer server = new CapitalizeServer();
 		server.startServer();
-		System.err.println("END!?!?");
+		//System.err.println("END!?!?");
+		
+//		CapitalizeClient client = new CapitalizeClient();
+//		String serverIP = "localhost";
+//		client.connectToServer(serverIP);
+		
 	}
 
 	private static class Capitalizer extends Thread {
@@ -163,7 +168,7 @@ public class CapitalizeServer {
 		private AudioInputStream audioInputStream = null;
 		private AudioFormat audioFormat = null;
 		private int packetSize = 0;
-		private float packetSecLength = .1f; // Second
+		private float packetSecLength = 1f; // Second
 		private long beginTimeGap = 1000;
 		int threshold = 0;
 
@@ -186,7 +191,7 @@ public class CapitalizeServer {
 			//String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/Metronome120.wav";
 			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/ratherbe.wav";
 			String urlWavFile = "//http://www.ics.uci.edu/~minhaenl/data/timetolove.wav";
-			String wavFile2 = "/Users/joshua_mac/Desktop/data/ratherbe.wav";
+			String wavFile2 = "/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/ratherbe.wav";
 			AudioInputStream aInputStream = null;
 			try {
 				URL url = new URL(urlWavFile);
@@ -241,16 +246,16 @@ public class CapitalizeServer {
 			audioInputStream = getAudioInputStream();
 			audioFormat = audioInputStream.getFormat();
 
-			String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
-			File file = new File(wavFile);
-			long audioFileLength = file.length();
-			int frameSize = audioFormat.getFrameSize();
-			float frameRate = audioFormat.getFrameRate();
-			float durationInSeconds = (audioFileLength / (frameSize * frameRate));
+			//String wavFile = "C:/Users/mhlee/Dropbox/class/2015_spring_cs244/code/data/timetolove.wav";
+//			File file = new File(wavFile);
+//			long audioFileLength = file.length();
+			int frameSize = 4;//audioFormat.getFrameSize();
+			float frameRate = 44100.0f;//audioFormat.getFrameRate();
+//			float durationInSeconds = (audioFileLength / (frameSize * frameRate));
 			log("frameSize: " + frameSize + ", frameRate: "
 					+ frameRate);
-			log("audioFileLength: " + audioFileLength
-					+ ", durationInSeconds: " + durationInSeconds);
+//			log("audioFileLength: " + audioFileLength
+//					+ ", durationInSeconds: " + durationInSeconds);
 
 			packetSize = (int) Math.ceil(frameSize * frameRate
 					* packetSecLength);
@@ -520,14 +525,15 @@ public class CapitalizeServer {
 							break;
 						}
 
-						long endTime = timeLookup.getCurrentTime();
+						long nowTime = timeLookup.getCurrentTime();
 						long expectedEndTime = (long) (curTime + pId * packetSecLength * 1000);
-						if( expectedEndTime < endTime){
+						
+						if( expectedEndTime < nowTime){
 							log("Capacity Overhead!");
 						}else{
 							try {
-								log("Sleep : ["+(expectedEndTime - endTime - 100)+"]");
-								Thread.sleep((long) (Math.max(0, expectedEndTime - endTime - 100)));
+								log("Sleep : ["+(expectedEndTime - nowTime - 100)+"]");
+								Thread.sleep((long) (Math.max(0, expectedEndTime - nowTime - 100)));
 							} catch (InterruptedException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();

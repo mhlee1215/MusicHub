@@ -148,7 +148,7 @@ public class CapitalizeClient {
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			long residual = 0;
+			//long residual = 0;
 			while (!isFinished()) {
 				synchronized (getLock()) {
 					while (isPaused()) {
@@ -158,6 +158,7 @@ public class CapitalizeClient {
 						}
 					}
 				}
+				//Delay when packet queue is empty
 				if (packets.size() == 0){
 					try {
 						Thread.sleep(1000);
@@ -171,9 +172,6 @@ public class CapitalizeClient {
 				log("##packets.size() :"+packets.size());
 				
 				AudioPacket curPacket = packets.poll();
-//				sourceDataLine.write(curPacket.packet, 0, curPacket.length);
-//				if(1==1) continue;
-				//log(curPacket.toString());
 				long curTime = timeLookup.getCurrentTime();
 				log("curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
 				
@@ -184,32 +182,14 @@ public class CapitalizeClient {
 				int gapLength = (int)(curPacket.length * (gap/(float)packetDuration));
 				gapLength-=gapLength%4;
 				int expPacketSize = (int)(curPacket.length + gapLength);
-				byte[] packetSyn = new byte[expPacketSize];
-				if (gap >= 0){
-					packetSyn = curPacket.packet;
-					expPacketSize = curPacket.length;
-					try {
-						sleep(gap);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					//System.arraycopy(curPacket.packet, 0, packetSyn, gapLength, curPacket.length);
-				}else{
-					System.arraycopy(curPacket.packet, -gapLength, packetSyn, 0, expPacketSize);
-				}
+				byte[] packetSyn = null;//new byte[expPacketSize];
+				packetSyn = curPacket.packet;
+				expPacketSize = curPacket.length;
+			
 				
 				log("expPacketSIze:"+expPacketSize+", gapLength: "+gapLength+", curPacket.length: "+curPacket.length);
 				
-				long beforeTime = timeLookup.getCurrentTime();
-				log("playtime gap : "+ (curPacket.playTime - beforeTime));
 				sourceDataLine.write(packetSyn, 0, expPacketSize);
-				long afterTime = timeLookup.getCurrentTime();
-				residual = packetDuration - (afterTime - beforeTime);
-				log("packetDuration : "+packetDuration);
-				log("beforeTime : "+beforeTime);
-				log("afterTime : "+afterTime);
-				log("Residual : "+residual);
 			}
 		}
 		
@@ -412,12 +392,8 @@ public class CapitalizeClient {
 						length = 0;
 					}
 					if(length>0) {
-						long playTime = in.readLong();
-					    
-//						if(message == null || message.length < length)
-							message = new byte[packetSize];
-//						if(message2 == null || message2.length < byteRead)
-							//message2 = new byte[packetSize];
+						long playTime = in.readLong();				    
+						message = new byte[packetSize];
 						
 					    //log("receive length!! : "+length);
 					    in.readFully(message, 0, packetSize); // read the message
@@ -425,9 +401,6 @@ public class CapitalizeClient {
 					    int newSignal = WifiDetector.getSignal();
 					    float meanSignal = signalMeanClass.signalMean(newSignal);
 					    out.writeInt(Math.round(meanSignal));
-					    
-					    
-					    //System.arraycopy(message, 0, message2, 0, packetSize);
 					    
 					    packets.add(new AudioPacket(byteRead, message, playTime));
 					    
@@ -501,7 +474,7 @@ public class CapitalizeClient {
 	
 	public void play(Socket socket, DataInputStream in, DataOutputStream out){
 		if (receiveDaemon == null)
-			receiveDaemon = new ReceiveDaemon(socket, clientName, in, out, 10);
+			receiveDaemon = new ReceiveDaemon(socket, clientName, in, out, 1);
 		//receiveDaemon.setDaemon(true);
 		log("Receive Daemon started..");
 		receiveDaemon.start();
@@ -539,23 +512,7 @@ public class CapitalizeClient {
 
 	public static void main(String[] args) throws Exception {
 		
-		
-//		MeanClass a = new MeanClass();
-//		System.out.println(a.mean(10));
-//		System.out.println(a.mean(10));
-//		System.out.println(a.mean(10));
-//		System.out.println(a.mean(10));
-//		System.out.println(a.mean(-100));
-//		
-//
-		
-//		byte[] bytes = new byte[10];
-//		ByteBuffer buf = ByteBuffer.wrap(bytes);
-//		System.out.println(buf);
-//		if(1==1) return;
-		
-		log("I am client");
-		// TODO Auto-generated method stub
+//		for(int i = 0 ; i < 3 ; i++){
 		CapitalizeClient client = new CapitalizeClient();
 		String serverIP = "";
 		if (args.length < 3)
@@ -563,6 +520,7 @@ public class CapitalizeClient {
 		else serverIP = args[3];
 		
 		client.connectToServer(serverIP);
+		//}
 	}
 	
 	private static void log(String message) {
