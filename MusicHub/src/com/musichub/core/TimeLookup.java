@@ -16,38 +16,38 @@ public class TimeLookup {
 
 	public TimeLookup() {
 		// Global Time
-		NTPUDPClient timeClient = new NTPUDPClient();
-		InetAddress inetAddress = null;
-		TimeInfo timeInfo = null;
-		this.offset = 0;
-		try {
-			inetAddress = InetAddress.getByName(TIME_SERVER);
-			timeInfo = timeClient.getTime(inetAddress);
-			
-			long returnTime = timeInfo.getReturnTime();
-			Date time = new Date(returnTime);
-			long globalSinceMidnight = time.getTime() % (24 * 60 * 60 * 1000);
-			System.out.println("Time from " + TIME_SERVER + ": " + time);
-			System.out.println(returnTime);
-			System.out.println("globalSinceMidnight: " + globalSinceMidnight);
-
-			// Local time
-			Date localTime = new Date();
-			long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
-			//System.out.println("localSinceMidnight: " + localSinceMidnight);
-
-			this.offset = globalSinceMidnight - localSinceMidnight;
-			System.out.println("offset : "+offset);
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			System.err.println("Fail to get time from server");
-			//e.printStackTrace();
-			//this.offset = offset;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			//return offset;
-		}
+//		NTPUDPClient timeClient = new NTPUDPClient();
+//		InetAddress inetAddress = null;
+//		TimeInfo timeInfo = null;
+//		this.offset = 0;
+//		try {
+//			inetAddress = InetAddress.getByName(TIME_SERVER);
+//			timeInfo = timeClient.getTime(inetAddress);
+//			
+//			long returnTime = timeInfo.getReturnTime();
+//			Date time = new Date(returnTime);
+//			long globalSinceMidnight = time.getTime() % (24 * 60 * 60 * 1000);
+//			System.out.println("Time from " + TIME_SERVER + ": " + time);
+//			System.out.println(returnTime);
+//			System.out.println("globalSinceMidnight: " + globalSinceMidnight);
+//
+//			// Local time
+//			Date localTime = new Date();
+//			long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
+//			//System.out.println("localSinceMidnight: " + localSinceMidnight);
+//
+//			this.offset = globalSinceMidnight - localSinceMidnight;
+//			System.out.println("offset : "+offset);
+//		} catch (UnknownHostException e) {
+//			// TODO Auto-generated catch block
+//			System.err.println("Fail to get time from server");
+//			//e.printStackTrace();
+//			//this.offset = offset;
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//			//return offset;
+//		}
 		
 		
 	}
@@ -71,22 +71,22 @@ public class TimeLookup {
 
 	public static void main(String[] args) throws Exception {
 		// Global Time
-		NTPUDPClient timeClient = new NTPUDPClient();
-		InetAddress inetAddress = InetAddress.getByName(TIME_SERVER);
-		TimeInfo timeInfo = timeClient.getTime(inetAddress);
-		long returnTime = timeInfo.getReturnTime();
-		Date time = new Date(returnTime);
-		long globalSinceMidnight = time.getTime() % (24 * 60 * 60 * 1000);
-		// System.out.println("Time from " + TIME_SERVER + ": " + time);
-		// System.out.println(returnTime);
-		System.out.println("globalSinceMidnight: " + globalSinceMidnight);
+//		NTPUDPClient timeClient = new NTPUDPClient();
+//		InetAddress inetAddress = InetAddress.getByName(TIME_SERVER);
+//		TimeInfo timeInfo = timeClient.getTime(inetAddress);
+//		long returnTime = timeInfo.getReturnTime();
+//		Date time = new Date(returnTime);
+//		long globalSinceMidnight = time.getTime() % (24 * 60 * 60 * 1000);
+//		// System.out.println("Time from " + TIME_SERVER + ": " + time);
+//		// System.out.println(returnTime);
+//		System.out.println("globalSinceMidnight: " + globalSinceMidnight);
 
 		// Local time
 		Date localTime = new Date();
 		long localSinceMidnight = localTime.getTime() % (24 * 60 * 60 * 1000);
 		System.out.println("localSinceMidnight: " + localSinceMidnight);
 
-		long offset = globalSinceMidnight - localSinceMidnight;
+		//long offset = globalSinceMidnight - localSinceMidnight;
 		// System.out.println(new Date());
 		// Calendar rightNow = Calendar.getInstance();
 		//

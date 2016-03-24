@@ -3,6 +3,7 @@ public class ThreadController extends Thread {
 	protected Object mPauseLock;
 	protected boolean mPaused;
 	protected boolean mFinished;
+	protected boolean mStarted;
 
 	
 	public ThreadController(){
@@ -10,6 +11,7 @@ public class ThreadController extends Thread {
 		mPauseLock = new Object();
         mPaused = false;
         mFinished = false;
+        mStarted = false;
 	}
 
 	/**
@@ -31,6 +33,16 @@ public class ThreadController extends Thread {
 		}
 	}
 
+	@Override
+	public void start(){
+		super.start();
+		mStarted = true;
+	}
+	
+	public boolean isStarted(){
+		return mStarted;
+	}
+	
 	public void onStop() {
 		mFinished = true;
 	}

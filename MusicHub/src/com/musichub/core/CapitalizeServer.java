@@ -23,6 +23,8 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.xml.bind.DatatypeConverter;
 
+import com.musichub.utils.ThreadController;
+
 public class CapitalizeServer {
 	static TimeLookup timeLookup = null;
 	private static Capitalizer server;
@@ -104,7 +106,7 @@ public class CapitalizeServer {
 	
 	
 	
-	public static class ListeningDaemon extends Thread {
+	public static class ListeningDaemon extends ThreadController {
 		int threshold;
 		public ListeningDaemon(int threshold){
 			this.threshold = threshold;
@@ -119,7 +121,15 @@ public class CapitalizeServer {
 				server = new Capitalizer(threshold);
 				try {
 	
-					while (true) {
+					while (!isFinished()) {
+						synchronized (getLock()) {
+							while (isPaused()) {
+								try {
+									getLock().wait();
+								} catch (InterruptedException e) {
+								}
+							}
+						}
 						log("Waiting.. next is " + clientNumber);
 						server.addListener(listener.accept(), clientNumber++);
 						if (clientNumber == 1) {
@@ -144,7 +154,9 @@ public class CapitalizeServer {
 
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
-		CapitalizeServer server = new CapitalizeServer();
+		System.out.println("???");
+		CapitalizeServer server = new CapitalizeServer(false, 0, -45);
+		System.out.println("start!");
 		server.startServer();
 		System.err.println("END!?!?");
 	}
@@ -490,7 +502,7 @@ public class CapitalizeServer {
 
 							log("send! byteRead:"+sizeToSend);
 							massWriteInt(sizeToSend); // write length of the message
-							log("send! length:"+data.length);
+							log("send! length:"+data.length+", playTime: "+playTime);
 							massWriteInt(data.length); // write length of the message
 							massWriteLong(playTime);
 							massWrite(data);
@@ -521,7 +533,8 @@ public class CapitalizeServer {
 						}
 
 						long endTime = timeLookup.getCurrentTime();
-						long expectedEndTime = (long) (curTime + pId * packetSecLength * 1000);
+						long expectedEndTime = (long) (curTime + beginTimeGap + pId * packetSecLength * 1000);
+						System.out.println("pID: "+pId+", expectedEndTime: "+expectedEndTime+", endTime:"+endTime);
 						if( expectedEndTime < endTime){
 							log("Capacity Overhead!");
 						}else{
@@ -563,10 +576,6 @@ public class CapitalizeServer {
 			}
 
 		}
-
-//		private void log(String message) {
-//			System.out.println("[SERVER] "+message);
-//		}
 
 		public static String toHexString(byte[] array) {
 			return DatatypeConverter.printHexBinary(array);

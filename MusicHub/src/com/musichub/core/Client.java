@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.net.Socket;
 
 public class Client {
+	private String id;
 	private String name;
 	private Socket sockets;
 	private DataInputStream in;
@@ -17,6 +18,8 @@ public class Client {
 	private boolean streaming;
 	private int signal;
 	private String signalStr;
+	
+	private CapitalizeClient capitalizeClient;
 	
 	public Client(Socket socket, String clientName, DataInputStream in, DataOutputStream out, boolean init, boolean alive, int signal){
 		this.sockets = socket;
