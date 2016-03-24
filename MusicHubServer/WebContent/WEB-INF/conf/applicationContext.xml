@@ -18,14 +18,14 @@
 	
 	 
 	<bean id="dataSource"  class="org.apache.commons.dbcp.BasicDataSource">
-    	<!-- <property name="driverClassName" value="core.log.jdbc.driver.MysqlDriver" />
-    	<property name="url" value="jdbc:mysql://localhost:3306/respacee" />
+    	<property name="driverClassName" value="core.log.jdbc.driver.MysqlDriver" />
+    	<!--  <property name="url" value="jdbc:mysql://localhost:3306/respacee" />
     	<property name="username" value="respacee" />
     	<property name="password" value="respace20133" /> -->
     	
-    	<property name="url" value="jdbc:mysql://respace.co.kr:3306/respacee" />
-    	<property name="username" value="respacee" />
-    	<property name="password" value="respace20133" />
+    	<property name="url" value="jdbc:mysql://127.0.0.1:3306/musichub" />
+    	<property name="username" value="root" />
+    	<property name="password" value="12345!" />
     	
     	<!-- <property name="url" value="jdbc:mysql://localhost:3306/respacee" />
     	<property name="username" value="root" />

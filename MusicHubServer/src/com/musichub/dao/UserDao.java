@@ -2,13 +2,13 @@ package com.musichub.dao;
 
 import java.util.List;
 
-import com.musichub.domain.RS_User;
+import com.musichub.domain.MH_User;
 
 
 public interface UserDao {
-	public RS_User readUser(RS_User user);
-	public void createUser(RS_User user);
-	public void deleteUser(RS_User user);
-	public void updateUser(RS_User user);
-	public List<RS_User> findAll();
+	public MH_User readUser(MH_User user);
+	public void createUser(MH_User user);
+	public void deleteUser(MH_User user);
+	public void updateUser(MH_User user);
+	public List<MH_User> findAll();
 }

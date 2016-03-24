@@ -4,17 +4,17 @@
     "http://ibatis.apache.org/dtd/sql-map-2.dtd">
 <sqlMap namespace="UserSql">
 
-	<resultMap id="User" class="com.musichub.domain.RS_User">
+	<resultMap id="User" class="com.musichub.domain.MH_User">
 		<result column="ID" property="id" />
 		<result column="NAME" property="name" />
 		<result column="EMAIL" property="email" />
-		<result column="TYPE" property="type" />
-		<!-- <result column="PASSWORD" property="password" /> -->
+		<!-- <result column="TYPE" property="type" />
+		<result column="PASSWORD" property="password" />
 		<result column="ISVERIFIED" property="isverified" />
 		<result column="ISDELETED" property="isdeleted" />
 		<result column="REGISTEREDDATE" property="registereddate" />
 		<result column="DELETEDDATE" property="deleteddate" />
-		<result column="VERIFIEDDATE" property="verifieddate" />
+		<result column="VERIFIEDDATE" property="verifieddate" /> -->
  	</resultMap>
  	
  	
@@ -26,22 +26,22 @@
  	</select>
  	
 	<select id="readUser" resultMap="User">
-       SELECT ID, NAME, EMAIL, TYPE, ISVERIFIED, ISDELETED, REGISTEREDDATE, DELETEDDATE, VERIFIEDDATE 
-       FROM rs_user 
+       SELECT ID, NAME, EMAIL 
+       FROM user 
        WHERE EMAIL = #email# 
        <isNotEmpty property="password">
        and PASSWORD = #password#
        </isNotEmpty>
 	</select>
 
-	<insert id="createUser" parameterClass="com.musichub.domain.RS_User">
+	<insert id="createUser" parameterClass="com.musichub.domain.MH_User">
 		 INSERT INTO
-		 rs_user (EMAIL, PASSWORD, TYPE)
-		 VALUES (#email#, #password#, #type#)
+		 user (EMAIL, PASSWORD, NAME)
+		 VALUES (#email#, #password#, #name#)
 	</insert>
 	
-	<update id="updateUser" parameterClass="com.musichub.domain.RS_User">
-		 UPDATE rs_user SET
+	<update id="updateUser" parameterClass="com.musichub.domain.MH_User">
+		 UPDATE user SET
 		 ID = #id#
 		 <isNotEmpty property="password">
 		 ,PASSWORD = #password#

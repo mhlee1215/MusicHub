@@ -16,19 +16,112 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.musichub.domain.RS_User;
+import com.musichub.domain.MH_User;
 import com.musichub.service.UserService;
 
 
 
 
-//@Controller
+@Controller
 public class UserController {
 
-//	private Logger logger = Logger.getLogger(getClass());
+	private Logger logger = Logger.getLogger(getClass());
 //	
-//	@Autowired
-//	private final UserService userService = null;
+	@Autowired
+	private final UserService userService = null;
+	
+	
+	
+	@RequestMapping("/login.do")
+    public ModelAndView login(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		
+		String email = ServletRequestUtils.getStringParameter(request, "email", "");
+		String password = ServletRequestUtils.getStringParameter(request, "password", "");
+		System.out.println(email+", "+password);
+		
+		logger.debug("public ModelAndView login");
+		logger.debug("===[S]======================");
+		logger.debug("email : "+email);
+		logger.debug("password : "+password);
+		MH_User user = new MH_User();
+		user.setEmail(email);
+		user.setPassword(password);
+		
+		int result = userService.readUser(user);
+		
+		//ModelAndView model = null;
+		
+		ModelAndView model = null;
+		model = new ModelAndView("mainPage");
+		
+		if(result == MH_User.STATUS_NOT_FOUNDED){
+			//model = new ModelAndView("join");
+			System.out.println("User does not exist! or password is wrong.");
+			model.addObject("loginFail", "true");
+		}
+		else if(result == MH_User.STATUS_FOUNDED){
+			//model = new ModelAndView("redirect:index.do");
+			System.out.println("User is founded!");
+			MH_User login_user = userService.readUserData(user);
+						
+			request.getSession().setAttribute("email", user.getEmail());
+			request.getSession().setAttribute("islogin", "true");
+			model.addObject("loginComplete", "true");
+			model.addObject("loginName", login_user.getName());
+
+			
+		}
+		model.addObject("email", email);
+		logger.debug("===[S]======================");
+		return model;
+    }
+	
+	
+	
+	@RequestMapping("/register.do")
+	  public ModelAndView register(HttpServletRequest request, HttpServletResponse response) throws Exception {
+			
+		
+			String email = ServletRequestUtils.getStringParameter(request, "email", "");
+			String password = ServletRequestUtils.getStringParameter(request, "password", "");
+			String name = ServletRequestUtils.getStringParameter(request, "name", "");
+
+			
+			ModelAndView model = new ModelAndView("mainPage");
+			if( email == null || password == null || name == null) {
+				model.addObject("reason", "parameter_incomplete");
+				model.addObject("registerFail", "true");
+			}else{
+				MH_User user = new MH_User();
+				user.setEmail(email);
+				user.setPassword(password);
+				user.setName(name);
+//				user.setType("1");	//Set as normal user
+				int result = userService.createUser(user);
+				if(result == MH_User.STATUS_ALREADY_REGISTEREDED){
+					System.out.println("The ID requested to register is already exists!");
+					model.addObject("reason", "already_exist");
+					model.addObject("registerFail", "true");
+					//model.addObject("submittedUserId", id);
+				}else if(result == MH_User.STATUS_SUCCESS_REGISTER){
+					
+		//			UserIdMap userIdMap = new UserIdMap();
+		//			userIdMap.setExternalId(id);
+		//			userIdMap.setInternalId(nextId);
+		//			userService.createUserIdMap(userIdMap);
+		//			model.addObject("registerComplete", "true");
+		//			model.addObject("submittedUserId", id);
+					
+					model.addObject("registerComplete", "true");
+				}
+			}
+			return model;
+	  }
+	
+	
+	
+	
+	
 //	
 //	
 //	

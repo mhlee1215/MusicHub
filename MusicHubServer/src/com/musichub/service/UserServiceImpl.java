@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.musichub.dao.UserDao;
-import com.musichub.domain.RS_User;
+import com.musichub.domain.MH_User;
 import com.musichub.util.Crypto;
 
 
@@ -24,46 +24,46 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private UserDao		userDao;
 	
-	boolean isEncrypt = true;
+	boolean isEncrypt = false;
 
-	public List<RS_User> findAll() {
+	public List<MH_User> findAll() {
 		return userDao.findAll();
 	}
 
-	public int createUser(RS_User user) throws Exception {
+	public int createUser(MH_User user) throws Exception {
 		
 		
 		//Encrypt
         if(isEncrypt)
         	 user.setPassword(Crypto.encrypt(user.getPassword()));       
-		RS_User paramUser = new RS_User();
+		MH_User paramUser = new MH_User();
 		paramUser.setEmail(user.getEmail());
-		RS_User foundUser = readUserData(paramUser);
+		MH_User foundUser = readUserData(paramUser);
 		logger.debug("create User");
 		logger.debug("==[S]============================");
 		
 		if(foundUser != null){
 			logger.debug("User is already registered. Cancel Register.");
 			logger.debug("==[E]============================");
-			return RS_User.STATUS_ALREADY_REGISTEREDED;
+			return MH_User.STATUS_ALREADY_REGISTEREDED;
 		}
 		else{
 			logger.debug("User doesn't find. Go Register.");
 			userDao.createUser(user);
 			
 			//Make User Folser
-			String cmd = "mkdir";
-			String resultStr = "";
+			//String cmd = "mkdir";
+			//String resultStr = "";
 			
 			//Make ID folder
 			//resultStr+=Env.exeCmd(cmd+" "+Env.ENV_DATA_PATH+user.getInternalid());
-			if(!resultStr.equals(""))resultStr+="<br>";
+			//if(!resultStr.equals(""))resultStr+="<br>";
 		
 			//Make Log folder
 			//Env.exeCmd(cmd+" "+Env.ENV_LOG_PATH+user.getInternalid());
-			System.out.println(resultStr);
+			//System.out.println(resultStr);
 			logger.debug("==[E]============================");
-			return RS_User.STATUS_SUCCESS_REGISTER;
+			return MH_User.STATUS_SUCCESS_REGISTER;
 		}
 		
 		
@@ -71,47 +71,47 @@ public class UserServiceImpl implements UserService {
 
 	
 
-	public int readUser(RS_User user) throws Exception {
+	public int readUser(MH_User user) throws Exception {
 		
 		if(isEncrypt)
 		    user.setPassword(Crypto.encrypt(user.getPassword()));
         //
-		RS_User readed = userDao.readUser(user);
+		MH_User readed = userDao.readUser(user);
 		
 		if(readed == null){
-			return RS_User.STATUS_NOT_FOUNDED;
+			return MH_User.STATUS_NOT_FOUNDED;
 		}else{
-			return RS_User.STATUS_FOUNDED;
+			return MH_User.STATUS_FOUNDED;
 		}
 	}
 	
-	public RS_User readUserData(RS_User user) throws Exception {
+	public MH_User readUserData(MH_User user) throws Exception {
 		return userDao.readUser(user);
 	}
 
-	public void updateUser(RS_User user) {
+	public void updateUser(MH_User user) {
 		userDao.updateUser(user);
 	}
 
 	public int verifyUser(String email) {
 
-		RS_User paramUser = new RS_User();
+		MH_User paramUser = new MH_User();
 		paramUser.setEmail(email);
-		RS_User user = userDao.readUser(paramUser);
+		MH_User user = userDao.readUser(paramUser);
 		if (user != null) {
 			if (user.getIsverified().equals("Y")) {
 				//alread verified.
-				return RS_User.STATUS_ALREADY_VERIFIED;
+				return MH_User.STATUS_ALREADY_VERIFIED;
 			} else {
 				paramUser.setIsverified("Y");
-				paramUser.setStatus(RS_User.STATUS_VERIFIED);
+				paramUser.setStatus(MH_User.STATUS_VERIFIED);
 				userDao.updateUser(paramUser);
 				// Activate successfully.
-				return RS_User.STATUS_SUCCESS_VERIFIED;
+				return MH_User.STATUS_SUCCESS_VERIFIED;
 			}
 		}
 		// Activate fail.
-		return RS_User.STATUS_NOT_FOUNDED;
+		return MH_User.STATUS_NOT_FOUNDED;
 	}
 
 	public int deleteUser(String id) {
@@ -119,20 +119,20 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	public int deleteUser(String email, boolean isDeleteRow) {
-		RS_User paramUser = new RS_User();
+		MH_User paramUser = new MH_User();
 		paramUser.setEmail(email);
-		RS_User user = userDao.readUser(paramUser);
+		MH_User user = userDao.readUser(paramUser);
 		if (user != null) {
 			if (user.getIsdeleted().equals("Y")) {
 				//alread deleted.
-				return RS_User.STATUS_ALREADY_DELETED;
+				return MH_User.STATUS_ALREADY_DELETED;
 			} else {
 				userDao.deleteUser(paramUser);
-				return RS_User.STATUS_SUCCESS_DELETED;
+				return MH_User.STATUS_SUCCESS_DELETED;
 			}
 		}
 		// Delete fail.
-		return RS_User.STATUS_DELTE_FAIL;
+		return MH_User.STATUS_DELTE_FAIL;
 		
 	}
 

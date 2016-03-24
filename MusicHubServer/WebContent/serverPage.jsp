@@ -8,97 +8,97 @@
 	 	<%@include file = "header.jsp"%>
 		
 		<script>
-		var isStart = false;
+			var isStart = false;
+			
+			<c:choose>
+		      <c:when test="${isPlay==true}">
+		      isStart = true;
+		      </c:when>
 		
-		<c:choose>
-	      <c:when test="${isPlay==true}">
-	      isStart = true;
-	      </c:when>
-	
-	      <c:otherwise>
-	      isStart = false;
-	      </c:otherwise>
-	    </c:choose>
+		      <c:otherwise>
+		      isStart = false;
+		      </c:otherwise>
+		    </c:choose>
+			
+		    $(function() {
+		         $("#id_btn_startServer").click(function() {
+		        	 if(isStart == false){
+		        		isStart = true;
+		        		 
+		        		var threshold = $("#id_turn_on_threshold").val(); 
+		        		var islazy = $("#id_islazy").val(); 
+		        		var lazyNum = $("#id_lazy_num").val(); 
+		        		/* alert(islazy);
+		        		alert(lazyNum); */
+		        		"id_islazy"
+		                $.ajax({
+		                  type: "POST",
+		                  url: "startServer.do",
+		                  data: ({isLazy:islazy, lazyNum:lazyNum, threshold:threshold}),
+		                  cache: false,
+		                  dataType: "text",
+		                  success: onStartSuccess
+		                });
+		        	 }
 		
-    $(function() {
-         $("#id_btn_startServer").click(function() {
-        	 if(isStart == false){
-        		isStart = true;
-        		 
-        		var threshold = $("#id_turn_on_threshold").val(); 
-        		var islazy = $("#id_islazy").val(); 
-        		var lazyNum = $("#id_lazy_num").val(); 
-        		/* alert(islazy);
-        		alert(lazyNum); */
-        		"id_islazy"
-                $.ajax({
-                  type: "POST",
-                  url: "startServer.do",
-                  data: ({isLazy:islazy, lazyNum:lazyNum, threshold:threshold}),
-                  cache: false,
-                  dataType: "text",
-                  success: onStartSuccess
-                });
-        	 }
-
-        });
-        $("#id_btn_stopServer").click(function() {
-        	if(isStart == true){
-        		isStart = false;
-				$.ajax({
-				  type: "POST",
-				  url: "stopServer.do",
-				  cache: false,
-				  dataType: "text",
-				  success: onStopSuccess
-				});
-        	}
-        });
-        /*
-        $("#resultLog").ajaxError(function(event, request, settings, exception) {
-          $("#resultLog").html("Error Calling: " + settings.url + "<br />HTTP Code: " + request.status);
-        });
-        */
-        
-        $('#id_islazy').change(function() {
-        	var islazy = $("#id_islazy").val(); 
-       		if(islazy == "off"){
-       			$("#id_lazy_ppl_field").hide();
-       		}else if(islazy == "on"){
-       			$("#id_lazy_ppl_field").show();
-       		}
-        });
-        
-        /* $('#id_isLazy').change(function() {
-        	  alert($('#id_isLazy').val());
-        	}); */
- 
-        function onStartSuccess(data)
-        {
-        	//alert(data);
-        	if (data == 'success'){
-        		$("#id_btn_startServer").hide();
-            	$("#id_btn_stopServer").show();	
-        	}
-        }
-        
-        function onStopSuccess(data)
-        {
-        	if (data == 'success'){
-        		
-        		$("#id_btn_startServer").show();
-            	$("#id_btn_stopServer").hide();	
-        	}
-        }
-        
-       
- 
-    });
-    
-    function blank(){
-    	
-    }
-	</script>
+		        });
+		        $("#id_btn_stopServer").click(function() {
+		        	if(isStart == true){
+		        		isStart = false;
+						$.ajax({
+						  type: "POST",
+						  url: "stopServer.do",
+						  cache: false,
+						  dataType: "text",
+						  success: onStopSuccess
+						});
+		        	}
+		        });
+		        /*
+		        $("#resultLog").ajaxError(function(event, request, settings, exception) {
+		          $("#resultLog").html("Error Calling: " + settings.url + "<br />HTTP Code: " + request.status);
+		        });
+		        */
+		        
+		        $('#id_islazy').change(function() {
+		        	var islazy = $("#id_islazy").val(); 
+		       		if(islazy == "off"){
+		       			$("#id_lazy_ppl_field").hide();
+		       		}else if(islazy == "on"){
+		       			$("#id_lazy_ppl_field").show();
+		       		}
+		        });
+		        
+		        /* $('#id_isLazy').change(function() {
+		        	  alert($('#id_isLazy').val());
+		        	}); */
+		 
+		        function onStartSuccess(data)
+		        {
+		        	//alert(data);
+		        	if (data == 'success'){
+		        		$("#id_btn_startServer").hide();
+		            	$("#id_btn_stopServer").show();	
+		        	}
+		        }
+		        
+		        function onStopSuccess(data)
+		        {
+		        	if (data == 'success'){
+		        		
+		        		$("#id_btn_startServer").show();
+		            	$("#id_btn_stopServer").hide();	
+		        	}
+		        }
+		        
+		       
+		 
+		    });
+		    
+		    function blank(){
+		    	
+		    }
+		</script>
 		
 			<p>Broadcasting</p>
             <input type="file"></input>

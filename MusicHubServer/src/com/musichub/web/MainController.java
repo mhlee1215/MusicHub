@@ -61,6 +61,16 @@ public class MainController {
 //    }
 	
 	
+	@RequestMapping("/mainPage.do")
+    public ModelAndView mainPage(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+		ModelAndView model = new ModelAndView("mainPage");
+	
+		
+				
+		return model;
+    }
+	
 	
 	@RequestMapping("/clientPage.do")
     public ModelAndView clientPage(HttpServletRequest request, HttpServletResponse response) throws Exception {

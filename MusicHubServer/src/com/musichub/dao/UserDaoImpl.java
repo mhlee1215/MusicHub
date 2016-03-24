@@ -11,7 +11,7 @@ import org.springframework.orm.ibatis.support.SqlMapClientDaoSupport;
 import org.springframework.stereotype.Repository;
 
 import com.ibatis.sqlmap.client.SqlMapClient;
-import com.musichub.domain.RS_User;
+import com.musichub.domain.MH_User;
 
 @Repository
 public class UserDaoImpl extends SqlMapClientDaoSupport implements UserDao {
@@ -23,30 +23,30 @@ public class UserDaoImpl extends SqlMapClientDaoSupport implements UserDao {
 	
 	
 	@SuppressWarnings("unchecked")
-	public List<RS_User> findAll() {	
-		List<RS_User> array = getSqlMapClientTemplate().queryForList("UserSql.readUserList");
+	public List<MH_User> findAll() {	
+		List<MH_User> array = getSqlMapClientTemplate().queryForList("UserSql.readUserList");
 		return array;
 	}
 
 
-	public RS_User readUser(RS_User user) {
-		RS_User result = (RS_User)getSqlMapClientTemplate().queryForObject("UserSql.readUser", user);
+	public MH_User readUser(MH_User user) {
+		MH_User result = (MH_User)getSqlMapClientTemplate().queryForObject("UserSql.readUser", user);
 		return result;
 	}
 
 
-	public void createUser(RS_User user) {
+	public void createUser(MH_User user) {
 		getSqlMapClientTemplate().insert("UserSql.createUser", user);
 	}
 
 
-	public void deleteUser(RS_User user) {
+	public void deleteUser(MH_User user) {
 		getSqlMapClientTemplate().delete("UserSql.deleteUser", user);
 		
 	}
 
 
-	public void updateUser(RS_User user) {
+	public void updateUser(MH_User user) {
 		getSqlMapClientTemplate().update("UserSql.updateUser", user);
 	}
 
