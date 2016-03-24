@@ -177,17 +177,21 @@ public class CapitalizeClient {
 				
 				int gap = (int) (curPacket.playTime - curTime);
 				
-				if (gap < 0 && Math.abs(gap) > packetDuration) continue;
-				log("gap : "+gap);
-				int gapLength = (int)(curPacket.length * (gap/(float)packetDuration));
-				gapLength-=gapLength%4;
-				int expPacketSize = (int)(curPacket.length + gapLength);
-				byte[] packetSyn = null;//new byte[expPacketSize];
-				packetSyn = curPacket.packet;
-				expPacketSize = curPacket.length;
-			
+				//Packet is already passed then skip the packet
+				if (gap < 0) continue;
+
+				byte[] packetSyn = curPacket.packet;//new byte[expPacketSize];
+				int expPacketSize = curPacket.length;
 				
-				log("expPacketSIze:"+expPacketSize+", gapLength: "+gapLength+", curPacket.length: "+curPacket.length);
+				log("expPacketSIze:"+expPacketSize+", gap: "+gap+", curPacket.length: "+curPacket.length);
+				
+				//Delay "gap" amount
+				//Wait until it's timing
+				try {
+					Thread.sleep(gap);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 				
 				sourceDataLine.write(packetSyn, 0, expPacketSize);
 			}

@@ -168,7 +168,7 @@ public class CapitalizeServer {
 		private AudioInputStream audioInputStream = null;
 		private AudioFormat audioFormat = null;
 		private int packetSize = 0;
-		private float packetSecLength = 1f; // Second
+		private float packetSecLength = .1f; // Second
 		private long beginTimeGap = 1000;
 		int threshold = 0;
 
@@ -339,8 +339,6 @@ public class CapitalizeServer {
 						!clients.get(clientNumber).isStreaming())
 					continue;
 
-				// Socket socket = sockets.get(clientNumber);
-				// BufferedReader in = ins.get(clientNumber);
 				DataOutputStream out = clients.get(clientNumber).getOut();
 
 				try {
