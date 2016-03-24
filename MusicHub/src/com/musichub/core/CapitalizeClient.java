@@ -19,6 +19,8 @@ import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
+import com.musichub.utils.ThreadController;
+
 public class CapitalizeClient {
 
 	
@@ -119,7 +121,7 @@ public class CapitalizeClient {
 
 
 
-	public static class PlayDaemon extends Thread {
+	public static class PlayDaemon extends ThreadController {
 		
 		
 		SourceDataLine sourceDataLine = null;
@@ -147,7 +149,15 @@ public class CapitalizeClient {
 		public void run() {
 			// TODO Auto-generated method stub
 			long residual = 0;
-			while(true){
+			while (!isFinished()) {
+				synchronized (getLock()) {
+					while (isPaused()) {
+						try {
+							getLock().wait();
+						} catch (InterruptedException e) {
+						}
+					}
+				}
 				if (packets.size() == 0){
 					try {
 						Thread.sleep(1000);
@@ -200,91 +210,6 @@ public class CapitalizeClient {
 				log("beforeTime : "+beforeTime);
 				log("afterTime : "+afterTime);
 				log("Residual : "+residual);
-//				try {
-//					sleep(residual/2);
-//				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-				
-//				//If current time is already passed, just trow away packet
-//				if (curPacket.playTime < curTime){
-//					continue;
-//				}
-//				//Else, wait the time until the specified time.
-//				else{
-//					try {
-//						long sleepTime = curPacket.playTime - curTime;
-//						log("sleep : "+sleepTime);
-//						log("residual : "+residual);
-//						
-//						curTime = timeLookup.getCurrentTime();
-//						log("1curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
-//						
-//						sleep(sleepTime);
-//						
-////						while(sleepTime > 0){
-////							log("sleepTime_sleep : "+sleepTime);
-////							sleep(5);
-////							curTime = timeLookup.getCurrentTime();
-////							sleepTime = curPacket.playTime - curTime;
-////						}
-//						
-//						curTime = timeLookup.getCurrentTime();
-//						log("2curTime:"+curTime+", curPacket.playTime:"+curPacket.playTime+", gap:"+(curPacket.playTime-curTime));
-//					} 
-//					catch (Exception e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//				}
-//				
-//				
-//				//System.out.println("threshold : "+threshold+", signal:"+WifiDetector.getSignal());
-//				int newSignal = WifiDetector.getSignal();
-//				float meanSignal = signalMeanClass.signalMean(newSignal);
-//				
-//				if(newSignal != WifiDetector.SIGNAL_INIT){
-//					float v_ratio = Math.min(1, Math.max(0, meanSignal - threshold)/(float)40);
-//					float v_ratio2 = (float)Math.pow(v_ratio, 0.5);
-//					//System.out.println("v_ratio:"+v_ratio+", v_ratio2:"+v_ratio2);
-//					setVolume(v_ratio2);
-//				}
-//				
-////				System.out.println("1newSignal: "+newSignal);
-////				System.out.println("meanSignal: "+meanSignal);
-////				System.out.println("signalList:"+signalList);
-//				
-//				
-//				long beforeTime = timeLookup.getCurrentTime();
-//				if(this.threshold <= meanSignal || newSignal == WifiDetector.SIGNAL_INIT ){
-//					sourceDataLine.write(curPacket.packet, 0, curPacket.length);
-//				}else{
-//					//System.out.println("Signal low.. pass packet");
-//					//Do nothing!.
-//				}
-//				long afterTime = timeLookup.getCurrentTime();
-//				residual = packetDuration - (afterTime - beforeTime);
-//				log("time gap : "+(afterTime-beforeTime));
-//				log("residual : "+residual);
-//				
-//				try {
-//					sleep(residual);
-//				} catch (InterruptedException e1) {
-//					// TODO Auto-generated catch block
-//					e1.printStackTrace();
-//				}
-//				while(residual > 0){
-//					log("residual_sleep : "+residual);
-//					try {
-//						sleep(5);
-//					} catch (InterruptedException e) {
-//						e.printStackTrace();
-//					}
-//					afterTime = timeLookup.getCurrentTime();
-//					residual = packetDuration - (afterTime - beforeTime);
-//
-//				}
 			}
 		}
 		
@@ -292,7 +217,11 @@ public class CapitalizeClient {
 		
 	}
 	
-	
+	/**
+	 * Get mean strength of signals
+	 * @author mhlee
+	 *
+	 */
 	public static class SignalMeanClass {
 		int SIGNAL_SIZE = 5;
 		List<Integer> signalList;
@@ -327,46 +256,46 @@ public class CapitalizeClient {
 		}
 	}
 	
-	public static class MeanClass {
-		int SIZE = 5;
-		List<Integer> list;
-		int nextPointer = 0;
-
-		public MeanClass(){
-			list = new ArrayList<Integer>(SIZE);
-			for(int i = 0 ; i < SIZE; i++)
-				list.add(0);
-		}
-
-
-		public float mean(int newData){
-			list.set(nextPointer, newData);
-			nextPointer++;
-			if(nextPointer == SIZE) nextPointer = 0;
-
-			return mean();
-		}
-
-		public float mean(){
-			int meanData = 0;
-
-			int counted = 0;
-			for(int i = 0 ; i < list.size(); i++){
-				if(list.get(i) != 0){
-					meanData += list.get(i);
-					counted++;
-				}
-			}
-			return meanData / (float)counted;
-		}
-	}
+//	public static class MeanClass {
+//		int SIZE = 5;
+//		List<Integer> list;
+//		int nextPointer = 0;
+//
+//		public MeanClass(){
+//			list = new ArrayList<Integer>(SIZE);
+//			for(int i = 0 ; i < SIZE; i++)
+//				list.add(0);
+//		}
+//
+//
+//		public float mean(int newData){
+//			list.set(nextPointer, newData);
+//			nextPointer++;
+//			if(nextPointer == SIZE) nextPointer = 0;
+//
+//			return mean();
+//		}
+//
+//		public float mean(){
+//			int meanData = 0;
+//
+//			int counted = 0;
+//			for(int i = 0 ; i < list.size(); i++){
+//				if(list.get(i) != 0){
+//					meanData += list.get(i);
+//					counted++;
+//				}
+//			}
+//			return meanData / (float)counted;
+//		}
+//	}
 	
 	
 	
 	
 	
 	
-	public static class ReceiveDaemon extends Thread {
+	public static class ReceiveDaemon extends ThreadController {
 
 		Socket socket = null;
 		DataInputStream in = null;
@@ -460,8 +389,16 @@ public class CapitalizeClient {
 			//int i = 0;
 			int errCount = 0;
 			byte[] message = null;//new byte[packetSize];//new byte[length];
-		    byte[] message2 = null;//new byte[packetSize];;//new byte[byteRead];
-			while (true) {
+		    //byte[] message2 = null;//new byte[packetSize];;//new byte[byteRead];
+		    while (!isFinished()) {
+				synchronized (getLock()) {
+					while (isPaused()) {
+						try {
+							getLock().wait();
+						} catch (InterruptedException e) {
+						}
+					}
+				}
 				try {
 					int byteRead = in.readInt();
 					int length = in.readInt();
@@ -480,7 +417,7 @@ public class CapitalizeClient {
 //						if(message == null || message.length < length)
 							message = new byte[packetSize];
 //						if(message2 == null || message2.length < byteRead)
-							message2 = new byte[packetSize];
+							//message2 = new byte[packetSize];
 						
 					    //log("receive length!! : "+length);
 					    in.readFully(message, 0, packetSize); // read the message
@@ -490,23 +427,25 @@ public class CapitalizeClient {
 					    out.writeInt(Math.round(meanSignal));
 					    
 					    
-					    System.arraycopy(message, 0, message2, 0, packetSize);
+					    //System.arraycopy(message, 0, message2, 0, packetSize);
 					    
-					    packets.add(new AudioPacket(byteRead, message2, playTime));
+					    packets.add(new AudioPacket(byteRead, message, playTime));
 					    
-					    if(!playDaemon.isAlive()){
+					    if(!playDaemon.isStarted()){
 					    	if(packets.size() > bufferedCycle){
 					    		log("Play Daemon started..");
 					    		playDaemon.start();
 					    	}
 					    }
-					}else{
-						System.err.println("Receive error");
-						if(!playDaemon.isAlive()){
-					    	playDaemon.start();
-					    }
-						//break;
 					}
+					//Usually not happened.
+//					else{
+//						System.err.println("Receive error");
+//						if(!playDaemon.isFinished()){
+//					    	playDaemon.start();
+//					    }
+//						//break;
+//					}
 
 				} catch (Exception ex) {
 					//response = "Error: " + ex;
@@ -524,6 +463,13 @@ public class CapitalizeClient {
 						e.printStackTrace();
 					}
 				}
+			}
+		    
+		    try {
+				socket.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
@@ -572,15 +518,11 @@ public class CapitalizeClient {
 	public synchronized void disconnectToServer(){
 		log("disconnectToServer");
 		if(receiveDaemon!=null)
-			receiveDaemon.stop();
-		if(playDaemon != null)
-			playDaemon.stop();
-		try {
-			receiveDaemon.socket.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			receiveDaemon.onStop();
+		if(playDaemon != null){
+			playDaemon.onStop();
 		}
+		
 		play = false;
 		connected = false;
 		
