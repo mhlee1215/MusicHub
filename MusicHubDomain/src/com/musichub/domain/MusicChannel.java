@@ -1,6 +1,5 @@
 package com.musichub.domain;
 
-import java.util.List;
 
 public class MusicChannel {
 	public static final int MAX_UNLIMITED = -10;
@@ -10,7 +9,20 @@ public class MusicChannel {
 	int curPeople;
 	int maxPeople;	
 	
+	public MusicChannel(String name, int curPeople, int maxPeople){
+		this.name = name;
+		this.curPeople = curPeople;
+		this.maxPeople = maxPeople;
+	}
 	
+	public int getCurPeople() {
+		return curPeople;
+	}
+
+	public void setCurPeople(int curPeople) {
+		this.curPeople = curPeople;
+	}
+
 	public MusicChannel(String id, String name){
 		this(id, name, MAX_UNLIMITED);	
 	}
